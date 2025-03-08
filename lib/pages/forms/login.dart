@@ -255,7 +255,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.pushNamed(context, '/signup-code');
+                            Navigator.pushNamed(context, '/signup');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,

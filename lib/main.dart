@@ -1,4 +1,5 @@
 import 'package:chicken_grills/pages/forms/login.dart';
+import 'package:chicken_grills/pages/forms/signup.dart';
 import 'package:chicken_grills/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -59,6 +60,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       routes: {
         '/': (context) => const MySplashScreen(), // SplashScreen
         '/login': (context) => const LoginPage(), // Page de connexion
+        '/signup': (context) => const SignupPage(), // Page d'inscription
       },
     );
   }
