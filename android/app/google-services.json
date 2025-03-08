@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "501759315795",
+    "project_id": "chicken-grills",
+    "storage_bucket": "chicken-grills.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:501759315795:android:1313982ad6deaa45fa9ba6",
+        "android_client_info": {
+          "package_name": "com.example.chicken_grills"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQvM8CFhS5ll6PKWL140_mXo-ezjdVTq4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
