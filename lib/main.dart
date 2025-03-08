@@ -14,9 +14,6 @@ void main() async {
   // Verrouillage de l'orientation en mode portrait
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  // Initialiser l'environnement en premier !
-  //await Environment.initialize();
-
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -58,7 +55,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey,
-      //debugShowCheckedModeBanner: Environment.showDebugBanner,
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         dialogBackgroundColor: const Color(0xFFF9D3C0),
         primarySwatch: Colors.blue,

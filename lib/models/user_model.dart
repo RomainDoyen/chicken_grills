@@ -34,4 +34,13 @@ class User {
       "role": role,
     };
   }
+
+  final Map<String, bool> publicInfo = {
+    'name': true,
+    'phone': true,
+    'description': true,
+    'address': true,
+    'email': false,
+    'siret': false,
+  };
 }

@@ -1,11 +1,11 @@
 import 'package:chicken_grills/pages/forms/login.dart';
 import 'package:chicken_grills/pages/signup_success.dart';
 import 'package:chicken_grills/services/auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:chicken_grills/models/user_model.dart';
 //import 'package:chicken_grills/pages/widgets/custom_dropdown.dart';
-//import 'package:chicken_grills/services/api_service.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -106,6 +106,24 @@ class _SignupPageState extends State<SignupPage> {
     final result = await _authService.signup(newUser);
 
     if (result["success"]) {
+
+      // Créer le profil public après inscription réussie
+      if (result["userId"] != null) {
+        try {
+          await FirebaseFirestore.instance.collection('publicProfiles').doc(result["userId"]).set({
+            'firstName': newUser.firstName,
+            'lastName': newUser.lastName,
+            'numTel': newUser.numTel,
+            'description': newUser.description ?? '',
+            'address': newUser.address ?? '',
+            'email': newUser.email,
+            'role': newUser.role,
+          });
+        } catch (e) {
+          print("Erreur lors de la création du profil public: $e");
+        }
+      }
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const LoginPage()),
