@@ -102,6 +102,12 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        Center(
+                          child: Image.asset(
+                            'assets/images/icon.png',
+                            width: 150,
+                          ),
+                        ),
                         const SizedBox(height: 40),
                         const Text(
                           "Bienvenue, connectez-vous pour commencer",
@@ -283,7 +289,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ],
-            ),
+            ), 
         ),
       ),
     );
