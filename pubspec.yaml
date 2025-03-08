@@ -40,6 +40,7 @@ dependencies:
   flutter_map: ^8.1.0
   flutter_launcher_icons: ^0.14.3
   rename_app: ^1.6.2
+  geocoding: ^3.0.0
 
 dev_dependencies:
   flutter_test:

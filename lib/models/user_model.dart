@@ -5,6 +5,8 @@ class User {
   final String firstName;
   final String numSiret;
   final String numTel;
+  final String? address;
+  final String? description;
   final String role;
 
   User({
@@ -14,6 +16,8 @@ class User {
     required this.firstName,
     required this.numSiret,
     required this.numTel,
+    this.address,
+    this.description,
     this.role = "lambda",
   });
 
@@ -25,6 +29,8 @@ class User {
       "firstName": firstName,
       "numSiret": numSiret,
       "numTel": numTel,
+      "address": address,
+      "description": description,
       "role": role,
     };
   }

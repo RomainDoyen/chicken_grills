@@ -78,7 +78,7 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF9D3C0),
+      backgroundColor: Color(0xFFEEF2FC),
       extendBody: true,
       body: Stack(
         children: [
@@ -91,7 +91,7 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 5),
                   height: 70,
-                  decoration: BoxDecoration(color: Color(0xFFF9D3C0)),
+                  decoration: BoxDecoration(color: Color(0xFFEEF2FC)),
                   child: _buildHeader(),
                 ),
               ),
