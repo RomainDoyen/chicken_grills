@@ -1,3 +1,4 @@
+import 'package:chicken_grills/services/auth_service.dart';
 import 'package:flutter/material.dart';
 //import 'package:chicken_grills/services/api_service.dart';
 
@@ -14,6 +15,8 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   String? _errorMessage = "";
+
+  final AuthService _authService = AuthService();
 
   // Expression régulière pour vérifier un email valide
   final RegExp emailRegex = RegExp(
@@ -63,19 +66,23 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    /*final result = await ApiService.loginUser(
-      _emailController.text,
-      _passwordController.text,
-      context,
-    );*/
+    final result = await _authService.login(_emailController.text, _passwordController.text);
 
-    /*if (result["success"]) {
-      Navigator.pushReplacementNamed(context, '/home');
+  if (result["success"]) {
+    // Naviguer en fonction du rôle
+    String role = result["role"];
+    if (role == 'admin') {
+      Navigator.pushReplacementNamed(context, '/admin_home');
+    } else if (role == 'pro') {
+      Navigator.pushReplacementNamed(context, '/pro_home');
     } else {
-      setState(() {
-        _errorMessage = result["message"];
-      });
-    }*/
+      Navigator.pushReplacementNamed(context, '/lambda_home');
+    }
+  } else {
+    setState(() {
+      _errorMessage = result["message"];
+    });
+  }
   }
 
   @override

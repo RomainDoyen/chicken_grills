@@ -1,8 +1,11 @@
 import 'package:chicken_grills/pages/forms/login.dart';
 import 'package:chicken_grills/pages/forms/signup.dart';
+import 'package:chicken_grills/pages/home/lambda_home_page.dart';
 import 'package:chicken_grills/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +15,10 @@ void main() async {
 
   // Initialiser l'environnement en premier !
   //await Environment.initialize();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(const MyApp());
 }
@@ -61,6 +68,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/': (context) => const MySplashScreen(), // SplashScreen
         '/login': (context) => const LoginPage(), // Page de connexion
         '/signup': (context) => const SignupPage(), // Page d'inscription
+        '/lambda_home': (context) => const LambdaHomePage(), // Page pour les utilisateurs lambda
+        //'/pro_home': (context) => const ProHomePage(),
       },
     );
   }

@@ -5,6 +5,7 @@ class User {
   final String firstName;
   final String numSiret;
   final String numTel;
+  final String role;
 
   User({
     required this.email,
@@ -13,6 +14,7 @@ class User {
     required this.firstName,
     required this.numSiret,
     required this.numTel,
+    this.role = "lambda",
   });
 
   Map<String, dynamic> toJson() {
@@ -23,6 +25,7 @@ class User {
       "firstName": firstName,
       "numSiret": numSiret,
       "numTel": numTel,
+      "role": role,
     };
   }
 }
