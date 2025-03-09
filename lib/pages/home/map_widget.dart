@@ -327,7 +327,7 @@ class _MapWidgetState extends State<MapWidget> {
   Widget _buildLimitedInfoCard(MarkerModel marker) {
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance
-          .collection('users')
+          .collection('publicProfiles')
           .doc(marker.userId)
           .get(),
       builder: (context, snapshot) {
@@ -370,6 +370,11 @@ class _MapWidgetState extends State<MapWidget> {
             
             // Numéro de téléphone professionnel
             _infoRow(Icons.phone, userData['numTel']),
+
+            const SizedBox(height: 16),
+
+            // Email professionnel
+            _infoRow(Icons.email, userData['email']),
             
             // Description du professionnel si disponible
             if (userData['description'] != null && userData['description'].toString().isNotEmpty) ...[
@@ -385,26 +390,6 @@ class _MapWidgetState extends State<MapWidget> {
               Text(userData['description']),
             ],
 
-            // Adresse du professionnel du professionnel si disponible
-            if (userData['address'] != null && userData['address'].toString().isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const Text(
-                'Adresse',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(userData['address']),
-            ],
-            
-            // Coordonnées géographiques
-            const SizedBox(height: 16),
-            Text(
-              'Coordonnées: ${marker.point.latitude.toStringAsFixed(5)}, ${marker.point.longitude.toStringAsFixed(5)}',
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
-            ),
           ],
         );
       },

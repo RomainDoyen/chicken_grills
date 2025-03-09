@@ -103,45 +103,71 @@ class _SignupPageState extends State<SignupPage> {
       role: _userType == 'pro' ? 'pro' : 'lambda',
     );
 
-    final result = await _authService.signup(newUser);
+    try {
+      final result = await _authService.signup(newUser);
 
-    if (result["success"]) {
-
-      // Créer le profil public après inscription réussie
-      if (result["userId"] != null) {
-        try {
-          await FirebaseFirestore.instance.collection('publicProfiles').doc(result["userId"]).set({
-            'firstName': newUser.firstName,
-            'lastName': newUser.lastName,
-            'numTel': newUser.numTel,
-            'description': newUser.description ?? '',
-            'address': newUser.address ?? '',
-            'email': newUser.email,
-            'role': newUser.role,
+      if (result["success"]) {
+        final String? userId = result["userId"];
+        
+        print("Résultat de signup: $result");
+        
+        if (userId != null) {
+          try {
+            // Création du profil public
+            Map<String, dynamic> publicData = {
+              'firstName': newUser.firstName,
+              'lastName': newUser.lastName,
+              'numTel': newUser.numTel,
+              'description': newUser.description ?? '',
+              'address': newUser.address ?? '',
+              'email': newUser.email,
+              'role': newUser.role,
+            };
+            
+            // Ajouter le numéro SIRET uniquement pour les utilisateurs pro
+            if (newUser.role == 'pro') {
+              publicData['numSiret'] = newUser.numSiret;
+            }
+            
+            await FirebaseFirestore.instance.collection('publicProfiles').doc(userId).set(publicData);
+            print("Profil public créé avec succès pour l'utilisateur: $userId");
+            
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginPage()),
+            );
+            showModalBottomSheet(
+              context: context,
+              isDismissible: false,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => const SignupSuccessPage(),
+            );
+          } catch (e) {
+            print("Erreur lors de la création du profil public: $e");
+            setState(() {
+              _errorMessage = "Inscription réussie mais problème avec la création du profil.";
+            });
+          }
+        } else {
+          print("ERREUR: userId est null");
+          setState(() {
+            _errorMessage = "Erreur: Impossible de récupérer l'identifiant utilisateur";
           });
-        } catch (e) {
-          print("Erreur lors de la création du profil public: $e");
         }
+      } else {
+        setState(() {
+          _errorMessage = result["message"];
+        });
       }
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
-      showModalBottomSheet(
-        context: context,
-        isDismissible: false,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => const SignupSuccessPage(),
-      );
-    } else {
+    } catch (e) {
+      print("ERREUR GLOBALE dans _signup: $e");
       setState(() {
-        _errorMessage = result["message"];
+        _errorMessage = "Une erreur inattendue s'est produite: $e";
       });
     }
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
