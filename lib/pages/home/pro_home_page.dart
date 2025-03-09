@@ -659,38 +659,42 @@ class _ProHomePageState extends State<ProHomePage> {
             Expanded(
               child: Stack(
                 children: [
-                  // Carte
-                  FlutterMap(
-                    mapController: _mapController,
-                    options: MapOptions(
-                      initialCenter: LatLng(-21.1151, 55.5364),
-                      initialZoom: 10.0,
-                      onTap: (tapPosition, point) {
-                        _addMarker(point);
-                      },
+                  ClipRRect(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
                     ),
-                    children: [
-                      TileLayer(
-                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    child: FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(
+                        initialCenter: LatLng(-21.1151, 55.5364),
+                        initialZoom: 10.0,
+                        onTap: (tapPosition, point) {
+                          _addMarker(point);
+                        },
                       ),
-                      MarkerLayer(
-                        markers: _markers.map((marker) {
-                          return Marker(
-                            point: marker.point,
-                            width: 40.0,
-                            height: 40.0,
-                            child: GestureDetector(
-                              onTap: () {
-                                _showMarkerBottomSheet(marker.point, marker);
-                              },
-                              child: Image.asset('assets/images/chicken-marker.png'),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        ),
+                        MarkerLayer(
+                          markers: _markers.map((marker) {
+                            return Marker(
+                              point: marker.point,
+                              width: 40.0,
+                              height: 40.0,
+                              child: GestureDetector(
+                                onTap: () {
+                                  _showMarkerBottomSheet(marker.point, marker);
+                                },
+                                child: Image.asset('assets/images/chicken-marker.png'),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
                   ),
-                  
                   // Bouton d'ajout de marqueur
                   Positioned(
                     bottom: 100, // Position plus haute pour éviter le chevauchement avec le DraggableScrollableSheet
