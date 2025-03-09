@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:chicken_grills/models/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -28,12 +29,13 @@ class _ProHomePageState extends State<ProHomePage> {
 
   final List<MarkerModel> _markers = [];
   final MapController _mapController = MapController();
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _fetchUserData();
-    _fetchMarkers();  // Charger les marqueurs depuis Firestore
+    _fetchMarkers();
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
@@ -409,8 +411,35 @@ class _ProHomePageState extends State<ProHomePage> {
                                 border: OutlineInputBorder(),
                                 filled: true,
                                 fillColor: Colors.grey[100],
+                                suffixIcon: Icon(Icons.location_on), // Indicateur visuel que l'adresse sera géocodée
                               ),
-                            ),
+                              onChanged: (value) {
+                                // Attendre que l'utilisateur finisse de taper (debounce)
+                                _debounce?.cancel();
+                                _debounce = Timer(Duration(milliseconds: 500), () async {
+                                  if (value.isNotEmpty) {
+                                    try {
+                                      List<geocoding.Location> locations = await geocoding.locationFromAddress(value);
+                                      if (locations.isNotEmpty) {
+                                        // Mise à jour de la position avec les nouvelles coordonnées
+                                        position = LatLng(locations.first.latitude, locations.first.longitude);
+                                        setModalState(() {});
+                                        // Notification subtile (optionnelle)
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text("Coordonnées mises à jour"),
+                                            duration: Duration(seconds: 1),
+                                          )
+                                        );
+                                      }
+                                    } catch (e) {
+                                      // Gestion silencieuse des erreurs
+                                      print("Impossible de géocoder l'adresse: $e");
+                                    }
+                                  }
+                                });
+                              },
+                            ),    
                             SizedBox(height: 8),
                             TextButton.icon(
                               icon: Icon(Icons.search_rounded, size: 16),
@@ -630,6 +659,7 @@ class _ProHomePageState extends State<ProHomePage> {
             Expanded(
               child: Stack(
                 children: [
+                  // Carte
                   FlutterMap(
                     mapController: _mapController,
                     options: MapOptions(
@@ -660,8 +690,10 @@ class _ProHomePageState extends State<ProHomePage> {
                       ),
                     ],
                   ),
+                  
+                  // Bouton d'ajout de marqueur
                   Positioned(
-                    bottom: 16,
+                    bottom: 100, // Position plus haute pour éviter le chevauchement avec le DraggableScrollableSheet
                     left: 0,
                     right: 0,
                     child: Center(
@@ -679,181 +711,225 @@ class _ProHomePageState extends State<ProHomePage> {
                       ),
                     ),
                   ),
+                  
+                  // DraggableScrollableSheet pour les informations de profil
+                  DraggableScrollableSheet(
+                    initialChildSize: 0.2, // Taille initiale (juste l'en-tête visible)
+                    minChildSize: 0.1, // Taille minimale
+                    maxChildSize: 0.7, // Taille maximale
+                    builder: (BuildContext context, ScrollController scrollController) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            topRight: Radius.circular(20),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              spreadRadius: 1,
+                              blurRadius: 10,
+                              offset: Offset(0, -3),
+                            ),
+                          ],
+                        ),
+                        child: CustomScrollView(
+                          controller: scrollController,
+                          slivers: <Widget>[
+                            // En-tête fixe avec poignée de glissement
+                            SliverToBoxAdapter(
+                              child: Column(
+                                children: [
+                                  SizedBox(height: 8),
+                                  // Poignée de glissement
+                                  Container(
+                                    width: 40,
+                                    height: 5,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  SizedBox(height: 15),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 20),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          "Informations du profil",
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF333333),
+                                          ),
+                                        ),
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: Color(0xFFF9B44E).withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: IconButton(
+                                            icon: Icon(Icons.edit, color: Color(0xFFF9B44E)),
+                                            onPressed: _showEditProfileBottomSheet,
+                                            tooltip: "Modifier vos informations",
+                                            iconSize: 20,
+                                            padding: EdgeInsets.all(8),
+                                            constraints: BoxConstraints(),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Divider(color: Colors.grey.withOpacity(0.2), thickness: 1, height: 25),
+                                ],
+                              ),
+                            ),
+                            
+                            // Contenu défilable
+                            SliverPadding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              sliver: SliverList(
+                                delegate: SliverChildListDelegate([
+                                  // Informations personnelles
+                                  Container(
+                                    padding: EdgeInsets.all(15),
+                                    margin: EdgeInsets.only(bottom: 15),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.05),
+                                          spreadRadius: 1,
+                                          blurRadius: 3,
+                                          offset: Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            CircleAvatar(
+                                              backgroundColor: Color(0xFFF9B44E).withOpacity(0.2),
+                                              radius: 20,
+                                              child: Icon(Icons.person, color: Color(0xFFF9B44E)),
+                                            ),
+                                            SizedBox(width: 15),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    "$_firstName $_lastName",
+                                                    style: TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Color(0xFF333333),
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 5),
+                                                  Text(
+                                                    _email,
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: Colors.grey[600],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  
+                                  // Coordonnées
+                                  Container(
+                                    padding: EdgeInsets.all(15),
+                                    margin: EdgeInsets.only(bottom: 15),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.05),
+                                          spreadRadius: 1,
+                                          blurRadius: 3,
+                                          offset: Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Coordonnées",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF444444),
+                                          ),
+                                        ),
+                                        SizedBox(height: 10),
+                                        _buildInfoRow(Icons.phone, "Téléphone", _numTel),
+                                        SizedBox(height: 12),
+                                        _buildInfoRow(Icons.location_on, "Adresse", _address),
+                                      ],
+                                    ),
+                                  ),
+                                  
+                                  // Informations professionnelles
+                                  Container(
+                                    padding: EdgeInsets.all(15),
+                                    margin: EdgeInsets.only(bottom: 15),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.05),
+                                          spreadRadius: 1,
+                                          blurRadius: 3,
+                                          offset: Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Informations professionnelles",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF444444),
+                                          ),
+                                        ),
+                                        SizedBox(height: 10),
+                                        _buildInfoRow(Icons.business, "Numéro SIRET", _numSiret),
+                                        SizedBox(height: 12),
+                                        _buildInfoRow(Icons.description, "Description", _description),
+                                      ],
+                                    ),
+                                  ),
+                                  // Espace supplémentaire en bas pour le défilement
+                                  SizedBox(height: 20),
+                                ]),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                elevation: 3,
-                shadowColor: Colors.black26,
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Informations du profil", 
-                            style: TextStyle(
-                              fontSize: 20, 
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF333333),
-                            )
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Color(0xFFF9B44E).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: IconButton(
-                              icon: Icon(Icons.edit, color: Color(0xFFF9B44E)),
-                              onPressed: _showEditProfileBottomSheet,
-                              tooltip: "Modifier vos informations",
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 15),
-                      Divider(color: Colors.grey.withOpacity(0.2), thickness: 1),
-                      SizedBox(height: 15),
-                      
-                      // Informations professionnelles
-                      Container(
-                        padding: EdgeInsets.all(15),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.05),
-                              spreadRadius: 1,
-                              blurRadius: 3,
-                              offset: Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: Color(0xFFF9B44E).withOpacity(0.2),
-                                  radius: 20,
-                                  child: Icon(Icons.person, color: Color(0xFFF9B44E)),
-                                ),
-                                SizedBox(width: 15),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "$_firstName $_lastName",
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF333333),
-                                        ),
-                                      ),
-                                      SizedBox(height: 5),
-                                      Text(
-                                        _email,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      SizedBox(height: 15),
-                      
-                      // Coordonnées
-                      Container(
-                        padding: EdgeInsets.all(15),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.05),
-                              spreadRadius: 1,
-                              blurRadius: 3,
-                              offset: Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Coordonnées",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF444444),
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                            _buildInfoRow(Icons.phone, "Téléphone", _numTel),
-                            SizedBox(height: 12),
-                            _buildInfoRow(Icons.location_on, "Adresse", _address),
-                          ],
-                        ),
-                      ),
-                      
-                      SizedBox(height: 15),
-                      
-                      // Informations professionnelles
-                      Container(
-                        padding: EdgeInsets.all(15),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.05),
-                              spreadRadius: 1,
-                              blurRadius: 3,
-                              offset: Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Informations professionnelles",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF444444),
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                            _buildInfoRow(Icons.business, "Numéro SIRET", _numSiret),
-                            SizedBox(height: 12),
-                            _buildInfoRow(Icons.description, "Description", _description),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            )
           ],
         ),
       ),
