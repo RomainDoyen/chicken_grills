@@ -25,6 +25,7 @@ class _SignupPageState extends State<SignupPage> {
   String _userType = 'lambda';  // 'lambda' ou 'pro'
   bool _obscurePassword = true;
   String? _errorMessage;
+  bool _isLoading = false; // Ajout d'une variable pour suivre l'état de chargement
 
   final AuthService _authService = AuthService();
 
@@ -93,6 +94,10 @@ class _SignupPageState extends State<SignupPage> {
   void _signup() async {
     if (!_validateFields()) return;
 
+    setState(() {
+      _isLoading = true;
+    });
+
     User newUser = User(
       email: _emailController.text,
       password: _passwordController.text,
@@ -132,6 +137,10 @@ class _SignupPageState extends State<SignupPage> {
             await FirebaseFirestore.instance.collection('publicProfiles').doc(userId).set(publicData);
             print("Profil public créé avec succès pour l'utilisateur: $userId");
             
+            setState(() {
+              _isLoading = false; // Désactiver le loader
+            });
+            
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const LoginPage()),
@@ -146,23 +155,27 @@ class _SignupPageState extends State<SignupPage> {
           } catch (e) {
             print("Erreur lors de la création du profil public: $e");
             setState(() {
+              _isLoading = false; // Désactiver le loader
               _errorMessage = "Inscription réussie mais problème avec la création du profil.";
             });
           }
         } else {
           print("ERREUR: userId est null");
           setState(() {
+            _isLoading = false; // Désactiver le loader
             _errorMessage = "Erreur: Impossible de récupérer l'identifiant utilisateur";
           });
         }
       } else {
         setState(() {
+          _isLoading = false; // Désactiver le loader
           _errorMessage = result["message"];
         });
       }
     } catch (e) {
       print("ERREUR GLOBALE dans _signup: $e");
       setState(() {
+        _isLoading = false; // Désactiver le loader
         _errorMessage = "Une erreur inattendue s'est produite: $e";
       });
     }
@@ -173,140 +186,154 @@ class _SignupPageState extends State<SignupPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2FC),
       body: SafeArea(
-        child: Expanded(
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 35),
-                  color: Colors.white,
-                  width: double.infinity,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Inscription",
-                        style: TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFFEF5829),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        "Créez votre compte",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w400,
-                          fontSize: 18,
-                          color: Color(0xFFF9B44E),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 20),
-                      _buildTextField("Email", _emailController, hintText: "example@example.com"),
-                      _buildTextField("Mot de passe", _passwordController, hintText: "***************", isPassword: true),
-                      _buildTextField("Nom", _lastNameController, hintText: "Doe"),
-                      _buildTextField("Prénom", _firstNameController, hintText: "John"),
-                      _buildTextField("Numéro de téléphone", _numTelController, hintText: "0262693457896"),
-
-                      // Dropdown pour choisir le type d'utilisateur
-                      DropdownButton<String>(
-                        value: _userType,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            _userType = newValue!;
-                          });
-                        },
-                        items: <String>['lambda', 'pro']
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value == 'lambda' ? 'Utilisateur lambda' : 'Utilisateur professionnel'),
-                          );
-                        }).toList(),
-                      ),
-
-                      // Afficher l'input Siret seulement pour les professionnels
-                      if (_userType == 'pro') 
-                        _buildTextField("Numéro de siret", _numSiret, hintText: "784 671 695 00103"),
-
-                      const SizedBox(height: 20),
-                      if (_errorMessage != null)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Text(
-                            _errorMessage!,
-                            style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      Center(
-                        child: SizedBox(
-                          width: 250,
-                          height: 45,
-                          child: ElevatedButton(
-                            onPressed: _signup,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFEF5829),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            child: const Text(
-                              "Inscription",
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
+        child: Stack(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 35),
+                      color: Colors.white,
+                      width: double.infinity,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Inscription",
+                            style: TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFEF5829),
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            "Créez votre compte",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w400,
+                              fontSize: 18,
+                              color: Color(0xFFF9B44E),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 10),
-                      Center(
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              CupertinoPageRoute(builder: (context) => const LoginPage()),
-                            );
-                          },
-                          child: const Text.rich(
-                            TextSpan(
-                              text: "Vous avez un compte ? ",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          _buildTextField("Email", _emailController, hintText: "example@example.com"),
+                          _buildTextField("Mot de passe", _passwordController, hintText: "***************", isPassword: true),
+                          _buildTextField("Nom", _lastNameController, hintText: "Doe"),
+                          _buildTextField("Prénom", _firstNameController, hintText: "John"),
+                          _buildTextField("Numéro de téléphone", _numTelController, hintText: "0262693457896"),
+
+                          // Dropdown pour choisir le type d'utilisateur
+                          DropdownButton<String>(
+                            value: _userType,
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _userType = newValue!;
+                              });
+                            },
+                            items: <String>['lambda', 'pro']
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value == 'lambda' ? 'Utilisateur lambda' : 'Utilisateur professionnel'),
+                              );
+                            }).toList(),
+                          ),
+
+                          // Afficher l'input Siret seulement pour les professionnels
+                          if (_userType == 'pro') 
+                            _buildTextField("Numéro de siret", _numSiret, hintText: "784 671 695 00103"),
+
+                          const SizedBox(height: 20),
+                          if (_errorMessage != null)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Text(
+                                _errorMessage!,
+                                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                               ),
-                              children: [
-                                TextSpan(
-                                  text: "Connectez-vous !",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFFEF5829),
-                                    fontWeight: FontWeight.w400,
+                            ),
+                          Center(
+                            child: SizedBox(
+                              width: 250,
+                              height: 45,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _signup, // Désactiver le bouton pendant le chargement
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFEF5829),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
                                   ),
                                 ),
-                              ],
+                                child: const Text(
+                                  "Inscription",
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 10),
+                          Center(
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  CupertinoPageRoute(builder: (context) => const LoginPage()),
+                                );
+                              },
+                              child: const Text.rich(
+                                TextSpan(
+                                  text: "Vous avez un compte ? ",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: "Connectez-vous !",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFFEF5829),
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                        ],
                       ),
-                      const SizedBox(height: 30),
-                    ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Afficher le loader au centre de l'écran quand _isLoading est true
+            if (_isLoading)
+              Container(
+                color: Colors.black.withOpacity(0.5),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFEF5829)),
                   ),
                 ),
-              ],
-            ),
-          ),
+              ),
+          ],
         ),
       ),
     );
