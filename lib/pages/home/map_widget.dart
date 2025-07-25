@@ -447,7 +447,10 @@ class _MapWidgetState extends State<MapWidget> {
                 ),
                 children: [
                   TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    subdomains: ['a', 'b', 'c'],
+                    userAgentPackageName: 'com.chicken_grills.app',
+                    maxZoom: 18,
                   ),
                   MarkerLayer(
                     markers: markers,

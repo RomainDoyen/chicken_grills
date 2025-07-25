@@ -1,9 +1,12 @@
 import 'package:chicken_grills/pages/forms/login.dart';
 import 'package:chicken_grills/pages/signup_success.dart';
 import 'package:chicken_grills/services/auth_service.dart';
+import 'package:chicken_grills/services/siret_validator.dart';
+import 'package:chicken_grills/services/firebase_error_translator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:chicken_grills/models/user_model.dart';
 //import 'package:chicken_grills/pages/widgets/custom_dropdown.dart';
 
@@ -22,10 +25,13 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController _numSiret = TextEditingController();
   final TextEditingController _numTelController = TextEditingController();
   String? _selectedSpecialty;
-  String _userType = 'lambda';  // 'lambda' ou 'pro'
+  String _userType = 'lambda'; // 'lambda' ou 'pro'
   bool _obscurePassword = true;
   String? _errorMessage;
-  bool _isLoading = false; // Ajout d'une variable pour suivre l'état de chargement
+  bool _isLoading =
+      false; // Ajout d'une variable pour suivre l'état de chargement
+  bool _isValidatingSiret = false;
+  String? _siretValidationMessage;
 
   final AuthService _authService = AuthService();
 
@@ -37,7 +43,7 @@ class _SignupPageState extends State<SignupPage> {
   // Expression régulière pour un mot de passe sécurisé
   final RegExp passwordRegex = RegExp(
     // r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$",
-    r"^(?=.*[a-z])(?=.*\d)[a-zA-Z\d]{6,}$", // sans les majuscules
+    r"^(?=.*[a-z])(?=.*\d).{6,}$", // sans les majuscules
   );
 
   bool _validateFields() {
@@ -63,7 +69,8 @@ class _SignupPageState extends State<SignupPage> {
       return false;
     } else if (!passwordRegex.hasMatch(_passwordController.text)) {
       setState(() {
-        _errorMessage = "Le mot de passe doit contenir au moins 6 caractères, une majuscule, une minuscule et un chiffre";
+        _errorMessage =
+            "Le mot de passe doit contenir au moins 6 caractères, une majuscule, une minuscule et un chiffre";
       });
       return false;
     } else if (_lastNameController.text.isEmpty) {
@@ -81,14 +88,61 @@ class _SignupPageState extends State<SignupPage> {
         _errorMessage = "Veuillez remplir le champ Numéro de téléphone";
       });
       return false;
-    }  else if (_userType == 'pro' && _numSiret.text.isEmpty) {
+    } else if (_userType == 'pro' && _numSiret.text.isEmpty) {
       setState(() {
         _errorMessage = "Veuillez remplir le champ Numéro de siret";
       });
       return false;
+    } else if (_userType == 'pro' && _numSiret.text.isNotEmpty) {
+      // Validation du format SIRET
+      if (!SiretValidator.validateSiretFormat(_numSiret.text)) {
+        setState(() {
+          _errorMessage =
+              "Le numéro SIRET n'est pas valide. Il doit contenir exactement 14 chiffres.";
+        });
+        return false;
+      }
     }
 
     return true;
+  }
+
+  // Méthode pour valider le SIRET en temps réel
+  Future<void> _validateSiretInRealTime(String siret) async {
+    if (siret.isEmpty) {
+      setState(() {
+        _siretValidationMessage = null;
+        _isValidatingSiret = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isValidatingSiret = true;
+      _siretValidationMessage = null;
+    });
+
+    try {
+      // Validation locale d'abord
+      Map<String, dynamic> result = await SiretValidator.validateSiret(
+        siret,
+        useAPI: false,
+      );
+
+      setState(() {
+        _isValidatingSiret = false;
+        if (result['valid']) {
+          _siretValidationMessage = '✅ ${result['message']}';
+        } else {
+          _siretValidationMessage = '❌ ${result['message']}';
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _isValidatingSiret = false;
+        _siretValidationMessage = '❌ Erreur lors de la validation';
+      });
+    }
   }
 
   void _signup() async {
@@ -113,9 +167,9 @@ class _SignupPageState extends State<SignupPage> {
 
       if (result["success"]) {
         final String? userId = result["userId"];
-        
+
         print("Résultat de signup: $result");
-        
+
         if (userId != null) {
           try {
             // Création du profil public
@@ -128,19 +182,22 @@ class _SignupPageState extends State<SignupPage> {
               'email': newUser.email,
               'role': newUser.role,
             };
-            
+
             // Ajouter le numéro SIRET uniquement pour les utilisateurs pro
             if (newUser.role == 'pro') {
               publicData['numSiret'] = newUser.numSiret;
             }
-            
-            await FirebaseFirestore.instance.collection('publicProfiles').doc(userId).set(publicData);
+
+            await FirebaseFirestore.instance
+                .collection('publicProfiles')
+                .doc(userId)
+                .set(publicData);
             print("Profil public créé avec succès pour l'utilisateur: $userId");
-            
+
             setState(() {
               _isLoading = false; // Désactiver le loader
             });
-            
+
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const LoginPage()),
@@ -156,14 +213,16 @@ class _SignupPageState extends State<SignupPage> {
             print("Erreur lors de la création du profil public: $e");
             setState(() {
               _isLoading = false; // Désactiver le loader
-              _errorMessage = "Inscription réussie mais problème avec la création du profil.";
+              _errorMessage =
+                  "Inscription réussie mais problème avec la création du profil.";
             });
           }
         } else {
           print("ERREUR: userId est null");
           setState(() {
             _isLoading = false; // Désactiver le loader
-            _errorMessage = "Erreur: Impossible de récupérer l'identifiant utilisateur";
+            _errorMessage =
+                "Erreur: Impossible de récupérer l'identifiant utilisateur";
           });
         }
       } else {
@@ -180,7 +239,83 @@ class _SignupPageState extends State<SignupPage> {
       });
     }
   }
-  
+
+  // Widget spécial pour le champ SIRET avec validation en temps réel
+  Widget _buildSiretTextField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Numéro de siret",
+          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 20),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: TextFormField(
+            controller: _numSiret,
+            decoration: InputDecoration(
+              hintText: "784 671 695 00103",
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              suffixIcon:
+                  _isValidatingSiret
+                      ? Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFFEF5829),
+                          ),
+                        ),
+                      )
+                      : _siretValidationMessage != null
+                      ? Icon(
+                        _siretValidationMessage!.startsWith('✅')
+                            ? Icons.check_circle
+                            : Icons.error,
+                        color:
+                            _siretValidationMessage!.startsWith('✅')
+                                ? Colors.green
+                                : Colors.red,
+                      )
+                      : null,
+            ),
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              // Formatage automatique du SIRET
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(14),
+            ],
+            onChanged: (value) {
+              // Validation en temps réel avec délai
+              Future.delayed(Duration(milliseconds: 500), () {
+                if (value.length == 14) {
+                  _validateSiretInRealTime(value);
+                } else if (value.isEmpty) {
+                  setState(() {
+                    _siretValidationMessage = null;
+                    _isValidatingSiret = false;
+                  });
+                }
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -194,7 +329,10 @@ class _SignupPageState extends State<SignupPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 35),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24.0,
+                        vertical: 35,
+                      ),
                       color: Colors.white,
                       width: double.infinity,
                       child: Column(
@@ -226,11 +364,32 @@ class _SignupPageState extends State<SignupPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 20),
-                          _buildTextField("Email", _emailController, hintText: "example@example.com"),
-                          _buildTextField("Mot de passe", _passwordController, hintText: "***************", isPassword: true),
-                          _buildTextField("Nom", _lastNameController, hintText: "Doe"),
-                          _buildTextField("Prénom", _firstNameController, hintText: "John"),
-                          _buildTextField("Numéro de téléphone", _numTelController, hintText: "0262693457896"),
+                          _buildTextField(
+                            "Email",
+                            _emailController,
+                            hintText: "example@example.com",
+                          ),
+                          _buildTextField(
+                            "Mot de passe",
+                            _passwordController,
+                            hintText: "***************",
+                            isPassword: true,
+                          ),
+                          _buildTextField(
+                            "Nom",
+                            _lastNameController,
+                            hintText: "Doe",
+                          ),
+                          _buildTextField(
+                            "Prénom",
+                            _firstNameController,
+                            hintText: "John",
+                          ),
+                          _buildTextField(
+                            "Numéro de téléphone",
+                            _numTelController,
+                            hintText: "0262693457896",
+                          ),
 
                           // Dropdown pour choisir le type d'utilisateur
                           DropdownButton<String>(
@@ -240,26 +399,78 @@ class _SignupPageState extends State<SignupPage> {
                                 _userType = newValue!;
                               });
                             },
-                            items: <String>['lambda', 'pro']
-                                .map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value == 'lambda' ? 'Utilisateur lambda' : 'Utilisateur professionnel'),
-                              );
-                            }).toList(),
+                            items:
+                                <String>[
+                                  'lambda',
+                                  'pro',
+                                ].map<DropdownMenuItem<String>>((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(
+                                      value == 'lambda'
+                                          ? 'Utilisateur lambda'
+                                          : 'Utilisateur professionnel',
+                                    ),
+                                  );
+                                }).toList(),
                           ),
 
                           // Afficher l'input Siret seulement pour les professionnels
-                          if (_userType == 'pro') 
-                            _buildTextField("Numéro de siret", _numSiret, hintText: "784 671 695 00103"),
+                          if (_userType == 'pro') ...[
+                            _buildSiretTextField(),
+                            if (_isValidatingSiret)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Color(0xFFEF5829),
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Validation en cours...',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (_siretValidationMessage != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  _siretValidationMessage!,
+                                  style: TextStyle(
+                                    color:
+                                        _siretValidationMessage!.startsWith('✅')
+                                            ? Colors.green
+                                            : Colors.red,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                          ],
 
                           const SizedBox(height: 20),
                           if (_errorMessage != null)
                             Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 8.0,
+                              ),
                               child: Text(
                                 _errorMessage!,
-                                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           Center(
@@ -267,7 +478,10 @@ class _SignupPageState extends State<SignupPage> {
                               width: 250,
                               height: 45,
                               child: ElevatedButton(
-                                onPressed: _isLoading ? null : _signup, // Désactiver le bouton pendant le chargement
+                                onPressed:
+                                    _isLoading
+                                        ? null
+                                        : _signup, // Désactiver le bouton pendant le chargement
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFFEF5829),
                                   shape: RoundedRectangleBorder(
@@ -291,7 +505,9 @@ class _SignupPageState extends State<SignupPage> {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  CupertinoPageRoute(builder: (context) => const LoginPage()),
+                                  CupertinoPageRoute(
+                                    builder: (context) => const LoginPage(),
+                                  ),
                                 );
                               },
                               child: const Text.rich(
@@ -329,7 +545,9 @@ class _SignupPageState extends State<SignupPage> {
                 color: Colors.black.withOpacity(0.5),
                 child: Center(
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFEF5829)),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFFEF5829),
+                    ),
                   ),
                 ),
               ),
@@ -339,15 +557,23 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool isPassword = false, String? hintText}) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    bool isPassword = false,
+    String? hintText,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(
-          fontWeight: FontWeight.w500, 
-          fontSize: 20,
-          //fontFamily: 'ArchivoNarrow',
-        )),
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 20,
+            //fontFamily: 'ArchivoNarrow',
+          ),
+        ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
@@ -373,18 +599,20 @@ class _SignupPageState extends State<SignupPage> {
               ),
               filled: true,
               fillColor: Colors.white,
-              suffixIcon: isPassword
-                  ? IconButton(
-                      icon: _obscurePassword
-                            ? Image.asset("assets/images/eye-slash.png")
-                            : Image.asset("assets/images/eye.png"),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
-                    )
-                  : null,
+              suffixIcon:
+                  isPassword
+                      ? IconButton(
+                        icon:
+                            _obscurePassword
+                                ? Image.asset("assets/images/eye-slash.png")
+                                : Image.asset("assets/images/eye.png"),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      )
+                      : null,
             ),
           ),
         ),

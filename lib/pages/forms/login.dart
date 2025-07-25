@@ -1,4 +1,5 @@
 import 'package:chicken_grills/services/auth_service.dart';
+import 'package:chicken_grills/services/firebase_error_translator.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
@@ -18,10 +19,14 @@ class _LoginPageState extends State<LoginPage> {
   final AuthService _authService = AuthService();
 
   // Expression régulière pour vérifier un email valide
-  final RegExp emailRegex = RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+  final RegExp emailRegex = RegExp(
+    r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+  );
 
   // Expression régulière pour un mot de passe sécurisé
-  final RegExp passwordRegex = RegExp(r"^(?=.*[a-z])(?=.*\d)[a-zA-Z\d]{6,}$"); // 6 caractères min, 1 lettre et 1 chiffre
+  final RegExp passwordRegex = RegExp(
+    r"^(?=.*[a-z])(?=.*\d).{6,}$",
+  ); // 6 caractères min, 1 lettre minuscule et 1 chiffre
 
   void _login() async {
     setState(() {
@@ -49,13 +54,17 @@ class _LoginPageState extends State<LoginPage> {
       return;
     } else if (!passwordRegex.hasMatch(_passwordController.text)) {
       setState(() {
-        _errorMessage = "Le mot de passe doit contenir au moins 6 caractères, une lettre et un chiffre";
+        _errorMessage =
+            "Le mot de passe doit contenir au moins 6 caractères, une lettre minuscule ou majuscule et un chiffre";
         _isLoading = false;
       });
       return;
     }
 
-    final result = await _authService.login(_emailController.text, _passwordController.text);
+    final result = await _authService.login(
+      _emailController.text,
+      _passwordController.text,
+    );
 
     setState(() {
       _isLoading = false; // Désactiver le chargement après la connexion
@@ -64,11 +73,16 @@ class _LoginPageState extends State<LoginPage> {
     if (result["success"]) {
       // Naviguer selon le rôle de l'utilisateur
       String role = result["role"];
+      print('Redirection vers le rôle: $role'); // Debug
+
       if (role == 'admin') {
+        print('Redirection vers admin_home');
         Navigator.pushReplacementNamed(context, '/admin_home');
       } else if (role == 'pro') {
+        print('Redirection vers pro_home');
         Navigator.pushReplacementNamed(context, '/pro_home');
       } else {
+        print('Redirection vers lambda_home (rôle: $role)');
         Navigator.pushReplacementNamed(context, '/lambda_home');
       }
     } else {
@@ -116,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                               const SizedBox(height: 30),
-                              
+
                               // Champ Email
                               Align(
                                 alignment: Alignment.centerLeft,
@@ -180,9 +194,14 @@ class _LoginPageState extends State<LoginPage> {
                                   filled: true,
                                   fillColor: Colors.white,
                                   suffixIcon: IconButton(
-                                    icon: _obscurePassword
-                                        ? Image.asset("assets/images/eye-slash.png")
-                                        : Image.asset("assets/images/eye.png"),
+                                    icon:
+                                        _obscurePassword
+                                            ? Image.asset(
+                                              "assets/images/eye-slash.png",
+                                            )
+                                            : Image.asset(
+                                              "assets/images/eye.png",
+                                            ),
                                     onPressed: () {
                                       setState(() {
                                         _obscurePassword = !_obscurePassword;
@@ -196,7 +215,12 @@ class _LoginPageState extends State<LoginPage> {
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/forgot_password',
+                                    );
+                                  },
                                   child: const Text(
                                     "Mot de passe oublié ?",
                                     style: TextStyle(
@@ -209,7 +233,8 @@ class _LoginPageState extends State<LoginPage> {
                               ),
 
                               // Affichage des erreurs
-                              if (_errorMessage != null && _errorMessage!.isNotEmpty)
+                              if (_errorMessage != null &&
+                                  _errorMessage!.isNotEmpty)
                                 Padding(
                                   padding: const EdgeInsets.only(top: 8.0),
                                   child: Text(
@@ -227,21 +252,33 @@ class _LoginPageState extends State<LoginPage> {
 
                       // Boutons Connexion et Inscription
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0,
+                          vertical: 16.0,
+                        ),
                         child: Column(
                           children: [
                             SizedBox(
                               width: 250,
                               height: 50,
                               child: ElevatedButton(
-                                onPressed: _isLoading ? null : _login, // Désactiver le bouton pendant le chargement
+                                onPressed:
+                                    _isLoading
+                                        ? null
+                                        : _login, // Désactiver le bouton pendant le chargement
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFFF9B44E),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
                                 ),
                                 child: const Text(
                                   "Connexion",
-                                  style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.w700),
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
                             ),
@@ -250,16 +287,28 @@ class _LoginPageState extends State<LoginPage> {
                               width: 250,
                               height: 50,
                               child: ElevatedButton(
-                                onPressed: _isLoading ? null : () {
-                                  Navigator.pushNamed(context, '/signup');
-                                }, // Désactiver le bouton pendant le chargement
+                                onPressed:
+                                    _isLoading
+                                        ? null
+                                        : () {
+                                          Navigator.pushNamed(
+                                            context,
+                                            '/signup',
+                                          );
+                                        }, // Désactiver le bouton pendant le chargement
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
                                 ),
                                 child: const Text(
                                   "Inscription",
-                                  style: TextStyle(fontSize: 23, color: Color(0xFFEF5829), fontWeight: FontWeight.w500),
+                                  style: TextStyle(
+                                    fontSize: 23,
+                                    color: Color(0xFFEF5829),
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ),

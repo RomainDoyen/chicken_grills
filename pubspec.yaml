@@ -41,6 +41,7 @@ dependencies:
   flutter_launcher_icons: ^0.14.3
   rename_app: ^1.6.2
   geocoding: ^3.0.0
+  http: ^1.1.0
 
 dev_dependencies:
   flutter_test:

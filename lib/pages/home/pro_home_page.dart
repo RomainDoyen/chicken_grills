@@ -57,18 +57,12 @@ class _ProHomePageState extends State<ProHomePage> {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
               SizedBox(height: 3),
               Text(
                 value.isEmpty ? "Non renseigné" : value,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -80,7 +74,11 @@ class _ProHomePageState extends State<ProHomePage> {
   void _fetchUserData() async {
     auth.User? user = auth.FirebaseAuth.instance.currentUser;
     if (user != null) {
-      DocumentSnapshot userData = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      DocumentSnapshot userData =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
       if (userData.exists) {
         setState(() {
           _email = userData['email'];
@@ -99,10 +97,11 @@ class _ProHomePageState extends State<ProHomePage> {
     // Charger les marqueurs existants depuis Firestore pour l'utilisateur connecté
     auth.User? user = auth.FirebaseAuth.instance.currentUser;
     if (user != null) {
-      QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('markers')
-          .where('userId', isEqualTo: user.uid)
-          .get();
+      QuerySnapshot snapshot =
+          await FirebaseFirestore.instance
+              .collection('markers')
+              .where('userId', isEqualTo: user.uid)
+              .get();
       setState(() {
         _markers.clear();
         for (var doc in snapshot.docs) {
@@ -125,35 +124,38 @@ class _ProHomePageState extends State<ProHomePage> {
   // Fonction pour supprimer un marqueur
   void _deleteMarker(String markerId) async {
     try {
-      await FirebaseFirestore.instance.collection('markers').doc(markerId).delete();
-      
+      await FirebaseFirestore.instance
+          .collection('markers')
+          .doc(markerId)
+          .delete();
+
       // Stocker la position du marqueur avant de le supprimer
       LatLng? markerPosition;
       int markerIndex = _markers.indexWhere((marker) => marker.id == markerId);
       if (markerIndex != -1) {
         markerPosition = _markers[markerIndex].point;
       }
-      
+
       setState(() {
         _markers.removeWhere((marker) => marker.id == markerId);
       });
-      
+
       // Si possible, recentrer la carte sur un autre marqueur ou sur la position précédente
       if (_markers.isNotEmpty) {
         _mapController.move(_markers.first.point, _mapController.camera.zoom);
       } else if (markerPosition != null) {
         _mapController.move(markerPosition, _mapController.camera.zoom);
       }
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Marqueur supprimé avec succès"))
+          SnackBar(content: Text("Marqueur supprimé avec succès")),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur lors de la suppression du marqueur"))
+          SnackBar(content: Text("Erreur lors de la suppression du marqueur")),
         );
       }
     }
@@ -161,12 +163,24 @@ class _ProHomePageState extends State<ProHomePage> {
 
   // Fonction pour afficher la bottom sheet pour modifier les informations de l'utilisateur
   void _showEditProfileBottomSheet() {
-    final TextEditingController firstNameController = TextEditingController(text: _firstName);
-    final TextEditingController lastNameController = TextEditingController(text: _lastName);
-    final TextEditingController numTelController = TextEditingController(text: _numTel);
-    final TextEditingController numSiretController = TextEditingController(text: _numSiret);
-    final TextEditingController descriptionController = TextEditingController(text: _description);
-    final TextEditingController addressController = TextEditingController(text: _address);
+    final TextEditingController firstNameController = TextEditingController(
+      text: _firstName,
+    );
+    final TextEditingController lastNameController = TextEditingController(
+      text: _lastName,
+    );
+    final TextEditingController numTelController = TextEditingController(
+      text: _numTel,
+    );
+    final TextEditingController numSiretController = TextEditingController(
+      text: _numSiret,
+    );
+    final TextEditingController descriptionController = TextEditingController(
+      text: _description,
+    );
+    final TextEditingController addressController = TextEditingController(
+      text: _address,
+    );
 
     showModalBottomSheet(
       context: context,
@@ -177,7 +191,7 @@ class _ProHomePageState extends State<ProHomePage> {
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom
+                bottom: MediaQuery.of(context).viewInsets.bottom,
               ),
               child: Container(
                 height: MediaQuery.of(context).size.height * 0.8,
@@ -211,7 +225,10 @@ class _ProHomePageState extends State<ProHomePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             SizedBox(height: 20),
-                            Text("Email: $_email", style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              "Email: $_email",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             SizedBox(height: 16),
                             TextField(
                               controller: firstNameController,
@@ -284,7 +301,10 @@ class _ProHomePageState extends State<ProHomePage> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         icon: Icon(Icons.check, color: Colors.white),
-                        label: Text("Valider les modifications", style: TextStyle(color: Colors.white)),
+                        label: Text(
+                          "Valider les modifications",
+                          style: TextStyle(color: Colors.white),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFFF9B44E),
                           padding: EdgeInsets.symmetric(vertical: 15),
@@ -293,18 +313,23 @@ class _ProHomePageState extends State<ProHomePage> {
                           ),
                         ),
                         onPressed: () async {
-                          auth.User? user = auth.FirebaseAuth.instance.currentUser;
+                          auth.User? user =
+                              auth.FirebaseAuth.instance.currentUser;
                           if (user == null) return;
 
                           try {
-                            await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-                              'firstName': firstNameController.text.trim(),
-                              'lastName': lastNameController.text.trim(),
-                              'numTel': numTelController.text.trim(),
-                              'numSiret': numSiretController.text.trim(),
-                              'address': addressController.text.trim(),
-                              'description': descriptionController.text.trim(),
-                            });
+                            await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .update({
+                                  'firstName': firstNameController.text.trim(),
+                                  'lastName': lastNameController.text.trim(),
+                                  'numTel': numTelController.text.trim(),
+                                  'numSiret': numSiretController.text.trim(),
+                                  'address': addressController.text.trim(),
+                                  'description':
+                                      descriptionController.text.trim(),
+                                });
 
                             setState(() {
                               _firstName = firstNameController.text.trim();
@@ -317,13 +342,21 @@ class _ProHomePageState extends State<ProHomePage> {
 
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Informations mises à jour avec succès"))
+                                SnackBar(
+                                  content: Text(
+                                    "Informations mises à jour avec succès",
+                                  ),
+                                ),
                               );
                             }
                           } catch (e) {
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Erreur lors de la mise à jour des informations"))
+                                SnackBar(
+                                  content: Text(
+                                    "Erreur lors de la mise à jour des informations",
+                                  ),
+                                ),
                               );
                             }
                           }
@@ -345,15 +378,15 @@ class _ProHomePageState extends State<ProHomePage> {
   // Fonction pour afficher la bottom sheet pour ajouter/modifier un marqueur
   void _showMarkerBottomSheet(LatLng position, [MarkerModel? existingMarker]) {
     final TextEditingController addressController = TextEditingController(
-      text: existingMarker?.address ?? ''
+      text: existingMarker?.address ?? '',
     );
     final TextEditingController descriptionController = TextEditingController(
-      text: existingMarker?.description ?? ''
+      text: existingMarker?.description ?? '',
     );
-    
+
     // Variable pour stocker l'adresse initiale et détecter les changements
     final String initialAddress = addressController.text;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -363,7 +396,7 @@ class _ProHomePageState extends State<ProHomePage> {
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom
+                bottom: MediaQuery.of(context).viewInsets.bottom,
               ),
               child: Container(
                 height: MediaQuery.of(context).size.height * 0.6,
@@ -379,8 +412,8 @@ class _ProHomePageState extends State<ProHomePage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          existingMarker != null 
-                              ? "Modifier le marqueur" 
+                          existingMarker != null
+                              ? "Modifier le marqueur"
                               : "Ajouter un marqueur",
                           style: TextStyle(
                             fontSize: 20,
@@ -411,35 +444,52 @@ class _ProHomePageState extends State<ProHomePage> {
                                 border: OutlineInputBorder(),
                                 filled: true,
                                 fillColor: Colors.grey[100],
-                                suffixIcon: Icon(Icons.location_on), // Indicateur visuel que l'adresse sera géocodée
+                                suffixIcon: Icon(
+                                  Icons.location_on,
+                                ), // Indicateur visuel que l'adresse sera géocodée
                               ),
                               onChanged: (value) {
                                 // Attendre que l'utilisateur finisse de taper (debounce)
                                 _debounce?.cancel();
-                                _debounce = Timer(Duration(milliseconds: 500), () async {
-                                  if (value.isNotEmpty) {
-                                    try {
-                                      List<geocoding.Location> locations = await geocoding.locationFromAddress(value);
-                                      if (locations.isNotEmpty) {
-                                        // Mise à jour de la position avec les nouvelles coordonnées
-                                        position = LatLng(locations.first.latitude, locations.first.longitude);
-                                        setModalState(() {});
-                                        // Notification subtile (optionnelle)
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text("Coordonnées mises à jour"),
-                                            duration: Duration(seconds: 1),
-                                          )
+                                _debounce = Timer(
+                                  Duration(milliseconds: 500),
+                                  () async {
+                                    if (value.isNotEmpty) {
+                                      try {
+                                        List<geocoding.Location> locations =
+                                            await geocoding.locationFromAddress(
+                                              value,
+                                            );
+                                        if (locations.isNotEmpty) {
+                                          // Mise à jour de la position avec les nouvelles coordonnées
+                                          position = LatLng(
+                                            locations.first.latitude,
+                                            locations.first.longitude,
+                                          );
+                                          setModalState(() {});
+                                          // Notification subtile (optionnelle)
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                "Coordonnées mises à jour",
+                                              ),
+                                              duration: Duration(seconds: 1),
+                                            ),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        // Gestion silencieuse des erreurs
+                                        print(
+                                          "Impossible de géocoder l'adresse: $e",
                                         );
                                       }
-                                    } catch (e) {
-                                      // Gestion silencieuse des erreurs
-                                      print("Impossible de géocoder l'adresse: $e");
                                     }
-                                  }
-                                });
+                                  },
+                                );
                               },
-                            ),    
+                            ),
                             SizedBox(height: 8),
                             TextButton.icon(
                               icon: Icon(Icons.search_rounded, size: 16),
@@ -448,23 +498,39 @@ class _ProHomePageState extends State<ProHomePage> {
                                 String address = addressController.text.trim();
                                 if (address.isNotEmpty) {
                                   try {
-                                    List<geocoding.Location> locations = await geocoding.locationFromAddress(address);
+                                    List<geocoding.Location> locations =
+                                        await geocoding.locationFromAddress(
+                                          address,
+                                        );
                                     if (locations.isNotEmpty) {
                                       // Mise à jour de la position avec les nouvelles coordonnées
-                                      position = LatLng(locations.first.latitude, locations.first.longitude);
-                                      
+                                      position = LatLng(
+                                        locations.first.latitude,
+                                        locations.first.longitude,
+                                      );
+
                                       setModalState(() {
                                         // Mettre à jour le texte de position dans la modal
                                       });
-                                      
+
                                       // Notification de succès
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text("Adresse convertie en coordonnées avec succès"))
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            "Adresse convertie en coordonnées avec succès",
+                                          ),
+                                        ),
                                       );
                                     }
                                   } catch (e) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text("Impossible de convertir cette adresse"))
+                                      SnackBar(
+                                        content: Text(
+                                          "Impossible de convertir cette adresse",
+                                        ),
+                                      ),
                                     );
                                   }
                                 }
@@ -487,16 +553,20 @@ class _ProHomePageState extends State<ProHomePage> {
                       ),
                     ),
                     Row(
-                      mainAxisAlignment: existingMarker != null 
-                          ? MainAxisAlignment.spaceBetween 
-                          : MainAxisAlignment.center,
+                      mainAxisAlignment:
+                          existingMarker != null
+                              ? MainAxisAlignment.spaceBetween
+                              : MainAxisAlignment.center,
                       children: [
                         if (existingMarker != null)
                           Expanded(
                             flex: 1,
                             child: ElevatedButton.icon(
                               icon: Icon(Icons.delete, color: Colors.white),
-                              label: Text("Supprimer", style: TextStyle(color: Colors.white)),
+                              label: Text(
+                                "Supprimer",
+                                style: TextStyle(color: Colors.white),
+                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,
                                 minimumSize: Size(130, 45),
@@ -515,7 +585,10 @@ class _ProHomePageState extends State<ProHomePage> {
                           flex: existingMarker != null ? 2 : 1,
                           child: ElevatedButton.icon(
                             icon: Icon(Icons.check, color: Colors.white),
-                            label: Text("Valider", style: TextStyle(color: Colors.white)),
+                            label: Text(
+                              "Valider",
+                              style: TextStyle(color: Colors.white),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Color(0xFFF9B44E),
                               minimumSize: Size(130, 45),
@@ -524,22 +597,27 @@ class _ProHomePageState extends State<ProHomePage> {
                               ),
                             ),
                             onPressed: () async {
-                              auth.User? user = auth.FirebaseAuth.instance.currentUser;
+                              auth.User? user =
+                                  auth.FirebaseAuth.instance.currentUser;
                               if (user == null) return;
 
                               String address = addressController.text.trim();
-                              String description = descriptionController.text.trim();
+                              String description =
+                                  descriptionController.text.trim();
 
                               if (existingMarker == null) {
                                 // Ajouter un nouveau marqueur
                                 try {
-                                  DocumentReference docRef = await FirebaseFirestore.instance.collection('markers').add({
-                                    'latitude': position.latitude,
-                                    'longitude': position.longitude,
-                                    'address': address,
-                                    'description': description,
-                                    'userId': user.uid,
-                                  });
+                                  DocumentReference docRef =
+                                      await FirebaseFirestore.instance
+                                          .collection('markers')
+                                          .add({
+                                            'latitude': position.latitude,
+                                            'longitude': position.longitude,
+                                            'address': address,
+                                            'description': description,
+                                            'userId': user.uid,
+                                          });
 
                                   MarkerModel newMarker = MarkerModel(
                                     id: docRef.id,
@@ -552,19 +630,30 @@ class _ProHomePageState extends State<ProHomePage> {
                                   setState(() {
                                     _markers.add(newMarker);
                                   });
-                                  
+
                                   // Centrer la carte sur le nouveau marqueur
-                                  _mapController.move(position, _mapController.camera.zoom);
-                                  
+                                  _mapController.move(
+                                    position,
+                                    _mapController.camera.zoom,
+                                  );
+
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text("Marqueur ajouté avec succès"))
+                                      SnackBar(
+                                        content: Text(
+                                          "Marqueur ajouté avec succès",
+                                        ),
+                                      ),
                                     );
                                   }
                                 } catch (e) {
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text("Erreur lors de l'ajout du marqueur"))
+                                      SnackBar(
+                                        content: Text(
+                                          "Erreur lors de l'ajout du marqueur",
+                                        ),
+                                      ),
                                     );
                                   }
                                 }
@@ -572,48 +661,73 @@ class _ProHomePageState extends State<ProHomePage> {
                                 // Modifier un marqueur existant
                                 try {
                                   // Si l'adresse a changé et qu'on n'a pas déjà mis à jour les coordonnées
-                                  if (address != initialAddress && position == existingMarker.point) {
+                                  if (address != initialAddress &&
+                                      position == existingMarker.point) {
                                     try {
                                       // Tenter de convertir la nouvelle adresse
-                                      List<geocoding.Location> locations = await geocoding.locationFromAddress(address);
+                                      List<geocoding.Location> locations =
+                                          await geocoding.locationFromAddress(
+                                            address,
+                                          );
                                       if (locations.isNotEmpty) {
-                                        position = LatLng(locations.first.latitude, locations.first.longitude);
+                                        position = LatLng(
+                                          locations.first.latitude,
+                                          locations.first.longitude,
+                                        );
                                       }
                                     } catch (e) {
                                       // En cas d'erreur, garder les coordonnées d'origine
-                                      print("Impossible de convertir l'adresse: $e");
+                                      print(
+                                        "Impossible de convertir l'adresse: $e",
+                                      );
                                     }
                                   }
 
-                                  await FirebaseFirestore.instance.collection('markers').doc(existingMarker.id).update({
-                                    'latitude': position.latitude,
-                                    'longitude': position.longitude,
-                                    'address': address,
-                                    'description': description,
-                                  });
+                                  await FirebaseFirestore.instance
+                                      .collection('markers')
+                                      .doc(existingMarker.id)
+                                      .update({
+                                        'latitude': position.latitude,
+                                        'longitude': position.longitude,
+                                        'address': address,
+                                        'description': description,
+                                      });
 
                                   setState(() {
                                     // Trouver et mettre à jour le marqueur localement
-                                    int index = _markers.indexWhere((m) => m.id == existingMarker.id);
+                                    int index = _markers.indexWhere(
+                                      (m) => m.id == existingMarker.id,
+                                    );
                                     if (index != -1) {
                                       _markers[index].point = position;
                                       _markers[index].address = address;
                                       _markers[index].description = description;
                                     }
                                   });
-                                  
+
                                   // Centrer la carte sur le marqueur mis à jour
-                                  _mapController.move(position, _mapController.camera.zoom);
-                                  
+                                  _mapController.move(
+                                    position,
+                                    _mapController.camera.zoom,
+                                  );
+
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text("Marqueur mis à jour avec succès"))
+                                      SnackBar(
+                                        content: Text(
+                                          "Marqueur mis à jour avec succès",
+                                        ),
+                                      ),
                                     );
                                   }
                                 } catch (e) {
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text("Erreur lors de la mise à jour du marqueur"))
+                                      SnackBar(
+                                        content: Text(
+                                          "Erreur lors de la mise à jour du marqueur",
+                                        ),
+                                      ),
                                     );
                                   }
                                 }
@@ -648,7 +762,10 @@ class _ProHomePageState extends State<ProHomePage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("Bienvenue $_firstName", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text(
+                    "Bienvenue $_firstName",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                   IconButton(
                     icon: Icon(Icons.exit_to_app, color: Colors.red),
                     onPressed: _logout,
@@ -675,38 +792,55 @@ class _ProHomePageState extends State<ProHomePage> {
                       ),
                       children: [
                         TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          urlTemplate:
+                              'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          subdomains: ['a', 'b', 'c'],
+                          userAgentPackageName: 'com.chicken_grills.app',
+                          maxZoom: 18,
                         ),
                         MarkerLayer(
-                          markers: _markers.map((marker) {
-                            return Marker(
-                              point: marker.point,
-                              width: 40.0,
-                              height: 40.0,
-                              child: GestureDetector(
-                                onTap: () {
-                                  _showMarkerBottomSheet(marker.point, marker);
-                                },
-                                child: Image.asset('assets/images/chicken-marker.png'),
-                              ),
-                            );
-                          }).toList(),
+                          markers:
+                              _markers.map((marker) {
+                                return Marker(
+                                  point: marker.point,
+                                  width: 40.0,
+                                  height: 40.0,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      _showMarkerBottomSheet(
+                                        marker.point,
+                                        marker,
+                                      );
+                                    },
+                                    child: Image.asset(
+                                      'assets/images/chicken-marker.png',
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
                         ),
                       ],
                     ),
                   ),
                   // Bouton d'ajout de marqueur
                   Positioned(
-                    bottom: 100, // Position plus haute pour éviter le chevauchement avec le DraggableScrollableSheet
+                    bottom:
+                        100, // Position plus haute pour éviter le chevauchement avec le DraggableScrollableSheet
                     left: 0,
                     right: 0,
                     child: Center(
                       child: ElevatedButton.icon(
                         icon: Icon(Icons.add_location, color: Colors.white),
-                        label: Text("Ajouter un marqueur", style: TextStyle(color: Colors.white)),
+                        label: Text(
+                          "Ajouter un marqueur",
+                          style: TextStyle(color: Colors.white),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFFF9B44E),
-                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -715,13 +849,17 @@ class _ProHomePageState extends State<ProHomePage> {
                       ),
                     ),
                   ),
-                  
+
                   // DraggableScrollableSheet pour les informations de profil
                   DraggableScrollableSheet(
-                    initialChildSize: 0.2, // Taille initiale (juste l'en-tête visible)
+                    initialChildSize:
+                        0.2, // Taille initiale (juste l'en-tête visible)
                     minChildSize: 0.1, // Taille minimale
                     maxChildSize: 0.7, // Taille maximale
-                    builder: (BuildContext context, ScrollController scrollController) {
+                    builder: (
+                      BuildContext context,
+                      ScrollController scrollController,
+                    ) {
                       return Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -757,9 +895,12 @@ class _ProHomePageState extends State<ProHomePage> {
                                   ),
                                   SizedBox(height: 15),
                                   Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 20),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                    ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
                                           "Informations du profil",
@@ -771,13 +912,22 @@ class _ProHomePageState extends State<ProHomePage> {
                                         ),
                                         Container(
                                           decoration: BoxDecoration(
-                                            color: Color(0xFFF9B44E).withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(10),
+                                            color: Color(
+                                              0xFFF9B44E,
+                                            ).withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
                                           ),
                                           child: IconButton(
-                                            icon: Icon(Icons.edit, color: Color(0xFFF9B44E)),
-                                            onPressed: _showEditProfileBottomSheet,
-                                            tooltip: "Modifier vos informations",
+                                            icon: Icon(
+                                              Icons.edit,
+                                              color: Color(0xFFF9B44E),
+                                            ),
+                                            onPressed:
+                                                _showEditProfileBottomSheet,
+                                            tooltip:
+                                                "Modifier vos informations",
                                             iconSize: 20,
                                             padding: EdgeInsets.all(8),
                                             constraints: BoxConstraints(),
@@ -786,11 +936,15 @@ class _ProHomePageState extends State<ProHomePage> {
                                       ],
                                     ),
                                   ),
-                                  Divider(color: Colors.grey.withOpacity(0.2), thickness: 1, height: 25),
+                                  Divider(
+                                    color: Colors.grey.withOpacity(0.2),
+                                    thickness: 1,
+                                    height: 25,
+                                  ),
                                 ],
                               ),
                             ),
-                            
+
                             // Contenu défilable
                             SliverPadding(
                               padding: EdgeInsets.symmetric(horizontal: 16),
@@ -813,25 +967,33 @@ class _ProHomePageState extends State<ProHomePage> {
                                       ],
                                     ),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
                                             CircleAvatar(
-                                              backgroundColor: Color(0xFFF9B44E).withOpacity(0.2),
+                                              backgroundColor: Color(
+                                                0xFFF9B44E,
+                                              ).withOpacity(0.2),
                                               radius: 20,
-                                              child: Icon(Icons.person, color: Color(0xFFF9B44E)),
+                                              child: Icon(
+                                                Icons.person,
+                                                color: Color(0xFFF9B44E),
+                                              ),
                                             ),
                                             SizedBox(width: 15),
                                             Expanded(
                                               child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
                                                     "$_firstName $_lastName",
                                                     style: TextStyle(
                                                       fontSize: 18,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                       color: Color(0xFF333333),
                                                     ),
                                                   ),
@@ -851,7 +1013,7 @@ class _ProHomePageState extends State<ProHomePage> {
                                       ],
                                     ),
                                   ),
-                                  
+
                                   // Coordonnées
                                   Container(
                                     padding: EdgeInsets.all(15),
@@ -869,7 +1031,8 @@ class _ProHomePageState extends State<ProHomePage> {
                                       ],
                                     ),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           "Coordonnées",
@@ -880,13 +1043,21 @@ class _ProHomePageState extends State<ProHomePage> {
                                           ),
                                         ),
                                         SizedBox(height: 10),
-                                        _buildInfoRow(Icons.phone, "Téléphone", _numTel),
+                                        _buildInfoRow(
+                                          Icons.phone,
+                                          "Téléphone",
+                                          _numTel,
+                                        ),
                                         SizedBox(height: 12),
-                                        _buildInfoRow(Icons.location_on, "Adresse", _address),
+                                        _buildInfoRow(
+                                          Icons.location_on,
+                                          "Adresse",
+                                          _address,
+                                        ),
                                       ],
                                     ),
                                   ),
-                                  
+
                                   // Informations professionnelles
                                   Container(
                                     padding: EdgeInsets.all(15),
@@ -904,7 +1075,8 @@ class _ProHomePageState extends State<ProHomePage> {
                                       ],
                                     ),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           "Informations professionnelles",
@@ -915,9 +1087,17 @@ class _ProHomePageState extends State<ProHomePage> {
                                           ),
                                         ),
                                         SizedBox(height: 10),
-                                        _buildInfoRow(Icons.business, "Numéro SIRET", _numSiret),
+                                        _buildInfoRow(
+                                          Icons.business,
+                                          "Numéro SIRET",
+                                          _numSiret,
+                                        ),
                                         SizedBox(height: 12),
-                                        _buildInfoRow(Icons.description, "Description", _description),
+                                        _buildInfoRow(
+                                          Icons.description,
+                                          "Description",
+                                          _description,
+                                        ),
                                       ],
                                     ),
                                   ),
