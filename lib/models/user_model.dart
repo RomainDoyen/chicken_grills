@@ -18,7 +18,7 @@ class User {
     required this.numTel,
     this.address,
     this.description,
-    this.role = "lambda",
+    this.role = "pro",
   });
 
   Map<String, dynamic> toJson() {

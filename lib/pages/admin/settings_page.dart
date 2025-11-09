@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:chicken_grills/theme/app_theme.dart';
+import 'package:chicken_grills/components/action_button.dart';
+import 'package:chicken_grills/components/settings_section.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -96,10 +99,10 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFEEF2FC),
+      backgroundColor: AppTheme.backgroundPeach,
       appBar: AppBar(
         title: Text('Paramètres'),
-        backgroundColor: Color(0xFFEF5829),
+        backgroundColor: AppTheme.primaryOrange,
         foregroundColor: Colors.white,
         actions: [
           if (_isLoading)
@@ -125,7 +128,7 @@ class _SettingsPageState extends State<SettingsPage> {
       body:
           _isLoading
               ? Center(
-                child: CircularProgressIndicator(color: Color(0xFFEF5829)),
+                child: CircularProgressIndicator(color: AppTheme.primaryOrange),
               )
               : SingleChildScrollView(
                 padding: EdgeInsets.all(16),

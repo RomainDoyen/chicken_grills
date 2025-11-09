@@ -55,8 +55,7 @@ class SignupSuccessPage extends StatelessWidget {
             height: 45,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pop(context); // Ferme la modale
-                Navigator.pushReplacementNamed(context, '/home'); // Va à l'accueil
+                Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFEF5829),

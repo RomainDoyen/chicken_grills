@@ -1,5 +1,6 @@
 import 'package:chicken_grills/services/auth_service.dart';
-import 'package:chicken_grills/services/firebase_error_translator.dart';
+import 'package:chicken_grills/theme/app_theme.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
@@ -27,6 +28,14 @@ class _LoginPageState extends State<LoginPage> {
   final RegExp passwordRegex = RegExp(
     r"^(?=.*[a-z])(?=.*\d).{6,}$",
   ); // 6 caractères min, 1 lettre minuscule et 1 chiffre
+
+  void _handleBackNavigation() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.pushReplacementNamed(context, '/main');
+    }
+  }
 
   void _login() async {
     setState(() {
@@ -73,17 +82,17 @@ class _LoginPageState extends State<LoginPage> {
     if (result["success"]) {
       // Naviguer selon le rôle de l'utilisateur
       String role = result["role"];
-      print('Redirection vers le rôle: $role'); // Debug
 
       if (role == 'admin') {
-        print('Redirection vers admin_home');
         Navigator.pushReplacementNamed(context, '/admin_home');
       } else if (role == 'pro') {
-        print('Redirection vers pro_home');
         Navigator.pushReplacementNamed(context, '/pro_home');
       } else {
-        print('Redirection vers lambda_home (rôle: $role)');
-        Navigator.pushReplacementNamed(context, '/lambda_home');
+        await firebase_auth.FirebaseAuth.instance.signOut();
+        setState(() {
+          _errorMessage =
+              "Cet espace est réservé aux professionnels référencés. Contactez l'équipe Chicken Grills pour obtenir un accès.";
+        });
       }
     } else {
       setState(() {
@@ -98,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
       body: Stack(
         children: [
           Container(
-            decoration: const BoxDecoration(color: Color(0xFFF9D3C0)),
+            decoration: const BoxDecoration(color: AppTheme.backgroundPeach),
             child: SingleChildScrollView(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
@@ -113,86 +122,30 @@ class _LoginPageState extends State<LoginPage> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Center(
-                                child: Image.asset(
-                                  'assets/images/icon.png',
-                                  width: 150,
-                                ),
-                              ),
-                              //const SizedBox(height: 10),
-                              const Text(
-                                "Bienvenue, connectez-vous pour commencer",
-                                textAlign: TextAlign.left,
-                                style: TextStyle(
-                                  fontSize: 23,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFFEF5829),
-                                ),
-                              ),
+                              Center(child: AppTheme.logoWidget()),
+                              AppTheme.welcomeText(),
                               const SizedBox(height: 30),
 
                               // Champ Email
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: const Text(
-                                  "Email",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 20,
-                                    color: Color(0xFFEF5829),
-                                  ),
-                                ),
-                              ),
+                              AppTheme.sectionTitle("Email"),
                               const SizedBox(height: 8),
                               TextField(
                                 controller: _emailController,
-                                decoration: InputDecoration(
+                                decoration: AppTheme.textFieldDecoration(
                                   hintText: "example@example.com",
-                                  hintStyle: const TextStyle(
-                                    color: Color(0xFFDDDDDD),
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: 16,
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide.none,
-                                  ),
                                 ),
                               ),
 
                               const SizedBox(height: 16),
 
                               // Champ Mot de passe
-                              const Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  "Mot de passe",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 20,
-                                    color: Color(0xFFEF5829),
-                                  ),
-                                ),
-                              ),
+                              AppTheme.sectionTitle("Mot de passe"),
                               const SizedBox(height: 8),
                               TextField(
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
-                                decoration: InputDecoration(
+                                decoration: AppTheme.textFieldDecoration(
                                   hintText: "************",
-                                  hintStyle: const TextStyle(
-                                    color: Color(0xFFDDDDDD),
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: 16,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.white,
                                   suffixIcon: IconButton(
                                     icon:
                                         _obscurePassword
@@ -221,13 +174,9 @@ class _LoginPageState extends State<LoginPage> {
                                       '/forgot_password',
                                     );
                                   },
-                                  child: const Text(
+                                  child: Text(
                                     "Mot de passe oublié ?",
-                                    style: TextStyle(
-                                      color: Color(0xFFEF5829),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                    ),
+                                    style: AppTheme.linkStyle,
                                   ),
                                 ),
                               ),
@@ -235,16 +184,7 @@ class _LoginPageState extends State<LoginPage> {
                               // Affichage des erreurs
                               if (_errorMessage != null &&
                                   _errorMessage!.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Text(
-                                    _errorMessage!,
-                                    style: const TextStyle(
-                                      color: Color.fromARGB(255, 160, 46, 12),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
+                                AppTheme.errorText(_errorMessage!),
                             ],
                           ),
                         ),
@@ -258,59 +198,17 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         child: Column(
                           children: [
-                            SizedBox(
-                              width: 250,
-                              height: 50,
-                              child: ElevatedButton(
-                                onPressed:
-                                    _isLoading
-                                        ? null
-                                        : _login, // Désactiver le bouton pendant le chargement
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFF9B44E),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                ),
-                                child: const Text(
-                                  "Connexion",
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
+                            AppTheme.primaryButton(
+                              text: "Connexion",
+                              onPressed: _login,
+                              isLoading: _isLoading,
                             ),
                             const SizedBox(height: 16),
-                            SizedBox(
-                              width: 250,
-                              height: 50,
-                              child: ElevatedButton(
-                                onPressed:
-                                    _isLoading
-                                        ? null
-                                        : () {
-                                          Navigator.pushNamed(
-                                            context,
-                                            '/signup',
-                                          );
-                                        }, // Désactiver le bouton pendant le chargement
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                ),
-                                child: const Text(
-                                  "Inscription",
-                                  style: TextStyle(
-                                    fontSize: 23,
-                                    color: Color(0xFFEF5829),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
+                            AppTheme.secondaryButton(
+                              text: "Inscription",
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/signup');
+                              },
                             ),
                           ],
                         ),
@@ -321,18 +219,18 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-          // Indicateur de chargement
-          if (_isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.5),
-              width: double.infinity,
-              height: double.infinity,
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: const Color(0xFFEF5829),
-                ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 12, top: 12),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, color: AppTheme.primaryOrange),
+                onPressed: _handleBackNavigation,
+                tooltip: 'Retour',
               ),
             ),
+          ),
+          // Indicateur de chargement
+          if (_isLoading) AppTheme.loadingOverlay(),
         ],
       ),
     );

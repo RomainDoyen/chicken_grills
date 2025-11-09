@@ -2,7 +2,6 @@ import 'package:chicken_grills/pages/forms/login.dart';
 import 'package:chicken_grills/pages/signup_success.dart';
 import 'package:chicken_grills/services/auth_service.dart';
 import 'package:chicken_grills/services/siret_validator.dart';
-import 'package:chicken_grills/services/firebase_error_translator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -24,8 +23,6 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _numSiret = TextEditingController();
   final TextEditingController _numTelController = TextEditingController();
-  String? _selectedSpecialty;
-  String _userType = 'lambda'; // 'lambda' ou 'pro'
   bool _obscurePassword = true;
   String? _errorMessage;
   bool _isLoading =
@@ -45,6 +42,14 @@ class _SignupPageState extends State<SignupPage> {
     // r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$",
     r"^(?=.*[a-z])(?=.*\d).{6,}$", // sans les majuscules
   );
+
+  void _handleBackNavigation() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.pushReplacementNamed(context, '/main');
+    }
+  }
 
   bool _validateFields() {
     setState(() {
@@ -88,13 +93,12 @@ class _SignupPageState extends State<SignupPage> {
         _errorMessage = "Veuillez remplir le champ Numéro de téléphone";
       });
       return false;
-    } else if (_userType == 'pro' && _numSiret.text.isEmpty) {
+    } else if (_numSiret.text.isEmpty) {
       setState(() {
         _errorMessage = "Veuillez remplir le champ Numéro de siret";
       });
       return false;
-    } else if (_userType == 'pro' && _numSiret.text.isNotEmpty) {
-      // Validation du format SIRET
+    } else if (_numSiret.text.isNotEmpty) {
       if (!SiretValidator.validateSiretFormat(_numSiret.text)) {
         setState(() {
           _errorMessage =
@@ -157,9 +161,9 @@ class _SignupPageState extends State<SignupPage> {
       password: _passwordController.text,
       lastName: _lastNameController.text,
       firstName: _firstNameController.text,
-      numSiret: _userType == 'pro' ? _numSiret.text : '',
+      numSiret: _numSiret.text,
       numTel: _numTelController.text,
-      role: _userType == 'pro' ? 'pro' : 'lambda',
+      role: 'pro',
     );
 
     try {
@@ -181,6 +185,8 @@ class _SignupPageState extends State<SignupPage> {
               'address': newUser.address ?? '',
               'email': newUser.email,
               'role': newUser.role,
+              'profileImageData': null,
+              'coverImageData': null,
             };
 
             // Ajouter le numéro SIRET uniquement pour les utilisateurs pro
@@ -323,219 +329,201 @@ class _SignupPageState extends State<SignupPage> {
       body: SafeArea(
         child: Stack(
           children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24.0,
-                        vertical: 35,
-                      ),
-                      color: Colors.white,
-                      width: double.infinity,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Inscription",
-                            style: TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFFEF5829),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            "Créez votre compte",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w400,
-                              fontSize: 18,
-                              color: Color(0xFFF9B44E),
-                            ),
-                          ),
-                        ],
-                      ),
+            SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0,
+                      vertical: 35,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 20),
-                          _buildTextField(
-                            "Email",
-                            _emailController,
-                            hintText: "example@example.com",
+                    color: Colors.white,
+                    width: double.infinity,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        SizedBox(height: 8),
+                        Text(
+                          "Espace Pro – Inscription",
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFFEF5829),
                           ),
-                          _buildTextField(
-                            "Mot de passe",
-                            _passwordController,
-                            hintText: "***************",
-                            isPassword: true,
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          "Réservé aux professionnels référencés par Chicken Grills.",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w400,
+                            fontSize: 16,
+                            color: Color(0xFFF9B44E),
                           ),
-                          _buildTextField(
-                            "Nom",
-                            _lastNameController,
-                            hintText: "Doe",
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 20),
+                        const Text(
+                          "Merci de renseigner les informations de votre établissement. Un numéro SIRET valide est requis pour valider l’inscription.",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
                           ),
-                          _buildTextField(
-                            "Prénom",
-                            _firstNameController,
-                            hintText: "John",
-                          ),
-                          _buildTextField(
-                            "Numéro de téléphone",
-                            _numTelController,
-                            hintText: "0262693457896",
-                          ),
-
-                          // Dropdown pour choisir le type d'utilisateur
-                          DropdownButton<String>(
-                            value: _userType,
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                _userType = newValue!;
-                              });
-                            },
-                            items:
-                                <String>[
-                                  'lambda',
-                                  'pro',
-                                ].map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(
-                                      value == 'lambda'
-                                          ? 'Utilisateur lambda'
-                                          : 'Utilisateur professionnel',
-                                    ),
-                                  );
-                                }).toList(),
-                          ),
-
-                          // Afficher l'input Siret seulement pour les professionnels
-                          if (_userType == 'pro') ...[
-                            _buildSiretTextField(),
-                            if (_isValidatingSiret)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Row(
-                                  children: [
-                                    SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Color(0xFFEF5829),
-                                      ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Validation en cours...',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
+                        ),
+                        const SizedBox(height: 20),
+                        _buildTextField(
+                          "Email",
+                          _emailController,
+                          hintText: "example@example.com",
+                        ),
+                        _buildTextField(
+                          "Mot de passe",
+                          _passwordController,
+                          hintText: "***************",
+                          isPassword: true,
+                        ),
+                        _buildTextField(
+                          "Nom",
+                          _lastNameController,
+                          hintText: "Doe",
+                        ),
+                        _buildTextField(
+                          "Prénom",
+                          _firstNameController,
+                          hintText: "John",
+                        ),
+                        _buildTextField(
+                          "Numéro de téléphone",
+                          _numTelController,
+                          hintText: "0262693457896",
+                        ),
+                        _buildSiretTextField(),
+                        if (_isValidatingSiret)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Row(
+                              children: [
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFFEF5829),
+                                  ),
                                 ),
-                              ),
-                            if (_siretValidationMessage != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(
-                                  _siretValidationMessage!,
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Validation en cours...',
                                   style: TextStyle(
-                                    color:
-                                        _siretValidationMessage!.startsWith('✅')
-                                            ? Colors.green
-                                            : Colors.red,
+                                    color: Colors.grey[600],
                                     fontSize: 12,
-                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                              ),
-                          ],
-
-                          const SizedBox(height: 20),
-                          if (_errorMessage != null)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 8.0,
-                              ),
-                              child: Text(
-                                _errorMessage!,
-                                style: const TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              ],
+                            ),
+                          ),
+                        if (_siretValidationMessage != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              _siretValidationMessage!,
+                              style: TextStyle(
+                                color: _siretValidationMessage!.startsWith('✅')
+                                    ? Colors.green
+                                    : Colors.red,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                          Center(
-                            child: SizedBox(
-                              width: 250,
-                              height: 45,
-                              child: ElevatedButton(
-                                onPressed:
-                                    _isLoading
-                                        ? null
-                                        : _signup, // Désactiver le bouton pendant le chargement
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFEF5829),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
+                          ),
+                        const SizedBox(height: 20),
+                        if (_errorMessage != null)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        Center(
+                          child: SizedBox(
+                            width: 250,
+                            height: 45,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _signup,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFEF5829),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
                                 ),
-                                child: const Text(
-                                  "Inscription",
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
+                              ),
+                              child: const Text(
+                                "Inscription",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          Center(
-                            child: GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  CupertinoPageRoute(
-                                    builder: (context) => const LoginPage(),
-                                  ),
-                                );
-                              },
-                              child: const Text.rich(
-                                TextSpan(
-                                  text: "Vous avez un compte ? ",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: "Connectez-vous !",
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFFEF5829),
-                                        fontWeight: FontWeight.w400,
-                                      ),
+                        ),
+                        const SizedBox(height: 10),
+                        Center(
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                CupertinoPageRoute(
+                                  builder: (context) => const LoginPage(),
+                                ),
+                              );
+                            },
+                          child: const Text.rich(
+                              TextSpan(
+                              text: "Vous avez déjà un accès professionnel ? ",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                                children: [
+                                  TextSpan(
+                                  text: "Connectez-vous !",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Color(0xFFEF5829),
+                                      fontWeight: FontWeight.w400,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 30),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 30),
+                      ],
                     ),
-                  ],
+                  ),
+                ],
+              ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12, top: 12),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFFEF5829)),
+                  onPressed: _handleBackNavigation,
+                  tooltip: 'Retour',
                 ),
               ),
             ),

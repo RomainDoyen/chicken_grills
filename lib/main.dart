@@ -1,14 +1,14 @@
-import 'package:chicken_grills/pages/forms/login.dart';
-import 'package:chicken_grills/pages/forms/signup.dart';
-import 'package:chicken_grills/pages/forms/forgot_password.dart';
-import 'package:chicken_grills/pages/home/lambda_home_page.dart';
-import 'package:chicken_grills/pages/home/pro_home_page.dart';
-import 'package:chicken_grills/pages/home/admin_home_page.dart';
-import 'package:chicken_grills/pages/admin/user_management_page.dart';
 import 'package:chicken_grills/pages/admin/marker_management_page.dart';
 import 'package:chicken_grills/pages/admin/settings_page.dart';
+import 'package:chicken_grills/pages/admin/user_management_page.dart';
+import 'package:chicken_grills/pages/forms/forgot_password.dart';
+import 'package:chicken_grills/pages/forms/login.dart';
+import 'package:chicken_grills/pages/forms/signup.dart';
+import 'package:chicken_grills/pages/home/admin_home_page.dart';
+import 'package:chicken_grills/pages/home/pro_home_page.dart';
+import 'package:chicken_grills/pages/navigation/main_navigation.dart';
 import 'package:chicken_grills/splash_screen.dart';
-import 'package:chicken_grills/services/admin_seeder.dart';
+import 'package:chicken_grills/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -21,10 +21,6 @@ void main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Créer le compte admin par défaut
-  final adminSeeder = AdminSeeder();
-  await adminSeeder.createAdminIfNotExists();
 
   runApp(const MyApp());
 }
@@ -64,22 +60,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     return MaterialApp(
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        dialogBackgroundColor: const Color(0xFFF9D3C0),
-        primarySwatch: Colors.blue,
-        iconTheme: const IconThemeData(color: Color(0xFFF9D3C0)),
-      ),
+      theme: AppTheme.theme,
       initialRoute: '/',
       routes: {
         '/': (context) => const MySplashScreen(), // SplashScreen
+        '/main': (context) => const MainNavigation(),
         '/login': (context) => const LoginPage(), // Page de connexion
         '/signup': (context) => const SignupPage(), // Page d'inscription
         '/forgot_password':
             (context) =>
                 const ForgotPasswordPage(), // Page de mot de passe oublié
-        '/lambda_home':
-            (context) =>
-                const LambdaHomePage(), // Page pour les utilisateurs lambda
         '/pro_home': (context) => const ProHomePage(),
         '/admin_home':
             (context) => const AdminHomePage(), // Page d'administration

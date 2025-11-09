@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:chicken_grills/theme/app_theme.dart';
+import 'package:chicken_grills/components/action_button.dart';
+import 'package:chicken_grills/components/marker_card.dart';
 
 class MarkerManagementPage extends StatefulWidget {
   @override
@@ -268,10 +271,10 @@ class _MarkerManagementPageState extends State<MarkerManagementPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFEEF2FC),
+      backgroundColor: AppTheme.backgroundPeach,
       appBar: AppBar(
         title: Text('Gestion des marqueurs'),
-        backgroundColor: Color(0xFFEF5829),
+        backgroundColor: AppTheme.primaryOrange,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -289,7 +292,7 @@ class _MarkerManagementPageState extends State<MarkerManagementPage> {
                 _isLoading
                     ? Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFFEF5829),
+                        color: AppTheme.primaryOrange,
                       ),
                     )
                     : _buildMarkerList(),
@@ -307,15 +310,9 @@ class _MarkerManagementPageState extends State<MarkerManagementPage> {
         children: [
           // Barre de recherche
           TextField(
-            decoration: InputDecoration(
+            decoration: AppTheme.textFieldDecoration(
               hintText: 'Rechercher un marqueur...',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              filled: true,
-              fillColor: Colors.grey[100],
-            ),
+            ).copyWith(prefixIcon: Icon(Icons.search)),
             onChanged: (value) {
               setState(() {
                 _searchQuery = value;
@@ -420,149 +417,18 @@ class _MarkerManagementPageState extends State<MarkerManagementPage> {
 
   Widget _buildMarkerCard(Map<String, dynamic> marker) {
     bool isActive = marker['isActive'] ?? true;
-    String category = marker['category'] ?? 'general';
 
-    return Card(
-      margin: EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        contentPadding: EdgeInsets.all(16),
-        leading: CircleAvatar(
-          backgroundColor:
-              isActive
-                  ? Colors.green.withOpacity(0.2)
-                  : Colors.grey.withOpacity(0.2),
-          child: Icon(
-            Icons.location_on,
-            color: isActive ? Colors.green : Colors.grey,
-          ),
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                marker['title'] ?? 'Sans titre',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isActive ? Colors.black : Colors.grey,
-                ),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color:
-                    isActive
-                        ? Colors.green.withOpacity(0.2)
-                        : Colors.grey.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                isActive ? 'Actif' : 'Inactif',
-                style: TextStyle(
-                  color: isActive ? Colors.green : Colors.grey,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 4),
-            Text(
-              marker['description'] ?? 'Aucune description',
-              style: TextStyle(
-                color: isActive ? Colors.grey[600] : Colors.grey,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.person, size: 16, color: Colors.grey[600]),
-                SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    marker['userName'] ?? 'Utilisateur inconnu',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.category, size: 16, color: Colors.grey[600]),
-                SizedBox(width: 4),
-                Text(
-                  category,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                ),
-                Spacer(),
-                Text(
-                  _formatDate(marker['createdAt']),
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                ),
-              ],
-            ),
-          ],
-        ),
-        trailing: PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert),
-          onSelected: (value) {
-            switch (value) {
-              case 'details':
-                _showMarkerDetails(marker);
-                break;
-              case 'toggle_status':
-                _toggleMarkerStatus(marker['id'], isActive);
-                break;
-              case 'delete':
-                _deleteMarker(marker['id']);
-                break;
-            }
-          },
-          itemBuilder:
-              (context) => [
-                PopupMenuItem(
-                  value: 'details',
-                  child: Row(
-                    children: [
-                      Icon(Icons.info, size: 16),
-                      SizedBox(width: 8),
-                      Text('Voir les détails'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'toggle_status',
-                  child: Row(
-                    children: [
-                      Icon(
-                        isActive ? Icons.block : Icons.check_circle,
-                        size: 16,
-                      ),
-                      SizedBox(width: 8),
-                      Text(isActive ? 'Désactiver' : 'Activer'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, size: 16, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Supprimer', style: TextStyle(color: Colors.red)),
-                    ],
-                  ),
-                ),
-              ],
-        ),
-      ),
+    return MarkerCard(
+      title: marker['title'] ?? 'Sans titre',
+      description: marker['description'] ?? 'Aucune description',
+      userName: marker['userName'] ?? 'Utilisateur inconnu',
+      userEmail: marker['userEmail'] ?? '',
+      category: marker['category'] ?? 'general',
+      isActive: isActive,
+      onTap: () => _showMarkerDetails(marker),
+      onEdit: () => _showMarkerDetails(marker),
+      onDelete: () => _deleteMarker(marker['id']),
+      onToggleStatus: () => _toggleMarkerStatus(marker['id'], isActive),
     );
   }
 }

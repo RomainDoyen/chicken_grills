@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:chicken_grills/theme/app_theme.dart';
+import 'package:chicken_grills/components/user_card.dart';
+import 'package:chicken_grills/components/action_button.dart';
 
 class UserManagementPage extends StatefulWidget {
   @override
@@ -201,10 +204,10 @@ class _UserManagementPageState extends State<UserManagementPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFEEF2FC),
+      backgroundColor: AppTheme.backgroundPeach,
       appBar: AppBar(
         title: Text('Gestion des utilisateurs'),
-        backgroundColor: Color(0xFFEF5829),
+        backgroundColor: AppTheme.primaryOrange,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -222,7 +225,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                 _isLoading
                     ? Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFFEF5829),
+                        color: AppTheme.primaryOrange,
                       ),
                     )
                     : _buildUserList(),
@@ -240,15 +243,9 @@ class _UserManagementPageState extends State<UserManagementPage> {
         children: [
           // Barre de recherche
           TextField(
-            decoration: InputDecoration(
+            decoration: AppTheme.textFieldDecoration(
               hintText: 'Rechercher un utilisateur...',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              filled: true,
-              fillColor: Colors.grey[100],
-            ),
+            ).copyWith(prefixIcon: Icon(Icons.search)),
             onChanged: (value) {
               setState(() {
                 _searchQuery = value;
@@ -357,138 +354,16 @@ class _UserManagementPageState extends State<UserManagementPage> {
   }
 
   Widget _buildUserCard(Map<String, dynamic> user) {
-    Color roleColor = _getRoleColor(user['role']);
     bool isActive = user['isActive'] ?? true;
 
-    return Card(
-      margin: EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        contentPadding: EdgeInsets.all(16),
-        leading: CircleAvatar(
-          backgroundColor: roleColor.withOpacity(0.2),
-          child: Text(
-            '${user['firstName'][0]}${user['lastName'][0]}'.toUpperCase(),
-            style: TextStyle(color: roleColor, fontWeight: FontWeight.bold),
-          ),
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                '${user['firstName']} ${user['lastName']}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isActive ? Colors.black : Colors.grey,
-                ),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: roleColor.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                _getRoleLabel(user['role']),
-                style: TextStyle(
-                  color: roleColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 4),
-            Text(
-              user['email'],
-              style: TextStyle(
-                color: isActive ? Colors.grey[600] : Colors.grey,
-              ),
-            ),
-            if (user['phone'] != null && user['phone'].isNotEmpty)
-              Text(
-                user['phone'],
-                style: TextStyle(
-                  color: isActive ? Colors.grey[600] : Colors.grey,
-                ),
-              ),
-            SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  isActive ? Icons.check_circle : Icons.cancel,
-                  color: isActive ? Colors.green : Colors.red,
-                  size: 16,
-                ),
-                SizedBox(width: 4),
-                Text(
-                  isActive ? 'Actif' : 'Inactif',
-                  style: TextStyle(
-                    color: isActive ? Colors.green : Colors.red,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        trailing: PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert),
-          onSelected: (value) {
-            switch (value) {
-              case 'edit_role':
-                _showRoleDialog(user);
-                break;
-              case 'toggle_status':
-                _toggleUserStatus(user['id'], isActive);
-                break;
-              case 'delete':
-                _deleteUser(user['id']);
-                break;
-            }
-          },
-          itemBuilder:
-              (context) => [
-                PopupMenuItem(
-                  value: 'edit_role',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit, size: 16),
-                      SizedBox(width: 8),
-                      Text('Modifier le rôle'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'toggle_status',
-                  child: Row(
-                    children: [
-                      Icon(
-                        isActive ? Icons.block : Icons.check_circle,
-                        size: 16,
-                      ),
-                      SizedBox(width: 8),
-                      Text(isActive ? 'Désactiver' : 'Activer'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, size: 16, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Supprimer', style: TextStyle(color: Colors.red)),
-                    ],
-                  ),
-                ),
-              ],
-        ),
-      ),
+    return UserCard(
+      name: '${user['firstName']} ${user['lastName']}',
+      email: user['email'],
+      role: user['role'],
+      phone: user['phone'] ?? '',
+      isActive: isActive,
+      onEdit: () => _showRoleDialog(user),
+      onDelete: () => _deleteUser(user['id']),
     );
   }
 

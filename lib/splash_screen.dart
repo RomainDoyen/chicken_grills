@@ -15,32 +15,32 @@ class _MySplashScreenState extends State<MySplashScreen> {
   @override
   void initState() {
     super.initState();
-     WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
         _isLogoVisible = true;
       });
       Timer(const Duration(seconds: 2), () {
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushReplacementNamed(context, '/main');
       });
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      color: Colors.white,
-      home: Scaffold(
-        backgroundColor: Color(0xFFF9D3C0),
-        body: Center(
-          child: AnimatedPositioned(
-            duration: const Duration(seconds: 2),
-            top: _isLogoVisible ? 0 : MediaQuery.of(context).size.height / 4,
-            left: 0,
-            right: 0,
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9D3C0),
+      body: Center(
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 600),
+          opacity: _isLogoVisible ? 1 : 0,
+          curve: Curves.easeInOut,
+          child: AnimatedScale(
+            duration: const Duration(milliseconds: 600),
+            scale: _isLogoVisible ? 1 : 0.85,
+            curve: Curves.easeOutBack,
             child: Container(
-              width: 295,
-              height: 165,
+              width: 220,
+              height: 220,
               decoration: const BoxDecoration(
                 image: DecorationImage(
                   image: AssetImage('assets/images/icon.png'),

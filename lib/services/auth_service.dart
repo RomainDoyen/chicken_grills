@@ -13,14 +13,21 @@ class AuthService {
       // Créer un utilisateur Firebase
       auth.UserCredential userCredential = await _auth
           .createUserWithEmailAndPassword(
-            email: user.email,
-            password: user.password,
-          );
-
+        email: user.email,
+        password: user.password,
+      );
+      
       // Récupération de l'ID utilisateur
       String userId = userCredential.user!.uid;
+      
 
-      print("Utilisateur créé avec ID: $userId");
+
+      if (user.numSiret.trim().isEmpty) {
+        return {
+          'success': false,
+          'message': 'Le numéro SIRET est obligatoire pour accéder à l’espace professionnel.',
+        };
+      }
 
       // Ajout des informations supplémentaires dans Firestore
       await _firestore.collection('users').doc(userId).set({
@@ -29,19 +36,17 @@ class AuthService {
         'lastName': user.lastName,
         'numTel': user.numTel,
         'numSiret': user.numSiret,
-        'role':
-            user.numSiret.isEmpty
-                ? 'lambda'
-                : 'pro', // Identifie le type d'utilisateur
+        'profileImageData': null,
+        'coverImageData': null,
+        'role': 'pro',
       });
 
       return {
-        'success': true,
+        'success': true, 
         'message': 'Inscription réussie!',
         'userId': userId, // Ajout de l'ID utilisateur dans la réponse
       };
     } catch (e) {
-      print("Erreur dans signup: $e");
       return {
         'success': false,
         'message': FirebaseErrorTranslator.translateError(e.toString()),
@@ -73,11 +78,8 @@ class AuthService {
       Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
       String role = userData['role'] ?? 'lambda';
 
-      print('Utilisateur connecté avec le rôle: $role'); // Debug
-
       return {'success': true, 'message': 'Connexion réussie!', 'role': role};
     } catch (e) {
-      print('Erreur de connexion: $e'); // Debug
       return {
         'success': false,
         'message': FirebaseErrorTranslator.translateError(e.toString()),

@@ -1,5 +1,6 @@
 import 'package:chicken_grills/pages/home/map_widget.dart';
 import 'package:chicken_grills/services/admin_stats_service.dart';
+import 'package:chicken_grills/theme/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -150,26 +151,49 @@ class _AdminHomePage extends State<AdminHomePage>
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
-          child: Text(
-            "Tableau de bord",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            overflow: TextOverflow.ellipsis,
+          child: Row(
+            children: [
+              AppTheme.logoWidget(),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Tableau de bord",
+                      style: TextStyle(
+                        color: AppTheme.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      "Administrateur",
+                      style: TextStyle(
+                        color: AppTheme.white.withOpacity(0.8),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: Icon(Icons.refresh, color: Color(0xFFEF5829)),
+              icon: const Icon(Icons.refresh, color: AppTheme.white),
               onPressed: _fetchStatistics,
               tooltip: "Actualiser les statistiques",
             ),
             IconButton(
-              icon: Icon(Icons.menu, color: Color(0xFFEF5829)),
+              icon: const Icon(Icons.menu, color: AppTheme.white),
               onPressed: _toggleSidebar,
             ),
             IconButton(
-              icon: Icon(Icons.logout, color: Colors.red),
+              icon: const Icon(Icons.logout, color: AppTheme.white),
               onPressed: _logout,
             ),
           ],
@@ -421,7 +445,7 @@ class _AdminHomePage extends State<AdminHomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFEEF2FC),
+      backgroundColor: AppTheme.backgroundPeach,
       extendBody: true,
       body: Stack(
         children: [
@@ -432,9 +456,17 @@ class _AdminHomePage extends State<AdminHomePage>
                 left: false,
                 right: false,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-                  height: 70,
-                  decoration: BoxDecoration(color: Color(0xFFEEF2FC)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryOrange,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
+                  ),
                   child: _buildHeader(),
                 ),
               ),

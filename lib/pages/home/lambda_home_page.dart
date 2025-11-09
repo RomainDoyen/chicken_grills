@@ -1,5 +1,6 @@
 import 'package:chicken_grills/pages/home/bottom_navbar.dart';
 import 'package:chicken_grills/pages/home/map_widget.dart';
+import 'package:chicken_grills/theme/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +12,8 @@ class LambdaHomePage extends StatefulWidget {
   _LambdaHomePage createState() => _LambdaHomePage();
 }
 
-class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderStateMixin {
+class _LambdaHomePage extends State<LambdaHomePage>
+    with SingleTickerProviderStateMixin {
   String _firstName = "";
   String _lastName = "";
   String _email = "";
@@ -32,13 +34,13 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
   @override
   void initState() {
     super.initState();
-    
+
     // Initialisation des contrôleurs
     _firstNameController = TextEditingController();
     _lastNameController = TextEditingController();
     _emailController = TextEditingController();
     _numTelController = TextEditingController();
-    
+
     _fetchUserData();
 
     // Initialisation de l'animation
@@ -47,28 +49,30 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
       duration: Duration(milliseconds: 300),
     );
 
-    _sidebarAnimation = Tween<double>(begin: -250, end: 0).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _sidebarAnimation = Tween<double>(begin: -250, end: 0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
 
-    _opacityAnimation = Tween<double>(begin: 0, end: 0.5).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _opacityAnimation = Tween<double>(begin: 0, end: 0.5).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
   }
 
   void _fetchUserData() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      DocumentSnapshot userData = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      DocumentSnapshot userData =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
       if (userData.exists) {
         setState(() {
           _firstName = userData['firstName'] ?? "";
           _lastName = userData['lastName'] ?? "";
           _email = userData['email'] ?? user.email ?? "";
           _numTel = userData['numTel'] ?? "Non renseigné";
-          
+
           // Mise à jour des contrôleurs avec les données utilisateur
           _firstNameController.text = _firstName;
           _lastNameController.text = _lastName;
@@ -105,9 +109,7 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFEF5829),
-          ),
+          child: CircularProgressIndicator(color: Color(0xFFEF5829)),
         );
       },
     );
@@ -116,12 +118,15 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         // Mise à jour des données dans Firestore
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-          'firstName': _firstNameController.text.trim(),
-          'lastName': _lastNameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'numTel': _numTelController.text.trim(),
-        });
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({
+              'firstName': _firstNameController.text.trim(),
+              'lastName': _lastNameController.text.trim(),
+              'email': _emailController.text.trim(),
+              'numTel': _numTelController.text.trim(),
+            });
 
         // Mise à jour des variables d'état
         setState(() {
@@ -206,11 +211,11 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
             builder: (context, child) {
               return _isSidebarOpen
                   ? GestureDetector(
-                      onTap: _toggleSidebar,
-                      child: Container(
-                        color: Colors.black.withOpacity(_opacityAnimation.value),
-                      ),
-                    )
+                    onTap: _toggleSidebar,
+                    child: Container(
+                      color: Colors.black.withOpacity(_opacityAnimation.value),
+                    ),
+                  )
                   : SizedBox.shrink();
             },
           ),
@@ -235,36 +240,54 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
   }
 
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Row(
-            children: [
-              SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  "$_firstName $_lastName".toUpperCase(),
-                  style: TextStyle(fontWeight: FontWeight.w400, fontSize: 14),
-                  overflow: TextOverflow.ellipsis,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryOrange,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                AppTheme.logoWidget(),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Bienvenue $_firstName",
+                        style: const TextStyle(
+                          color: AppTheme.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "Utilisateur lambda",
+                        style: TextStyle(
+                          color: AppTheme.white.withOpacity(0.8),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-        Row(
-          children: [
-            /*IconButton(
-              icon: Icon(Icons.exit_to_app, size: 24, color: Colors.red),
-              onPressed: _logout,
-            ),*/
-            IconButton(
-              icon: Icon(Icons.settings, size: 24, color: Color(0xFFEF5829)),
-              onPressed: _toggleSidebar,
+              ],
             ),
-          ],
-        ),
-      ],
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings, size: 24, color: AppTheme.white),
+            onPressed: _toggleSidebar,
+          ),
+        ],
+      ),
     );
   }
 
@@ -273,7 +296,13 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
       width: 280,
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 15, offset: Offset(-5, 0))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 15,
+            offset: Offset(-5, 0),
+          ),
+        ],
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(25),
           bottomLeft: Radius.circular(25),
@@ -286,10 +315,8 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
             Container(
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               decoration: BoxDecoration(
-                color: Color(0xFFEF5829).withOpacity(0.9),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(25),
-                ),
+                color: AppTheme.primaryOrange.withOpacity(0.9),
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(25)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -334,46 +361,70 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _isEditing ? _buildEditField(Icons.person, "Nom", _firstNameController) 
-                                 : _buildProfileItem(Icons.person, "Nom", _firstName),
+                      _isEditing
+                          ? _buildEditField(
+                            Icons.person,
+                            "Nom",
+                            _firstNameController,
+                          )
+                          : _buildProfileItem(Icons.person, "Nom", _firstName),
                       _buildDivider(),
-                      _isEditing ? _buildEditField(Icons.badge, "Prénom", _lastNameController) 
-                                 : _buildProfileItem(Icons.badge, "Prénom", _lastName),
+                      _isEditing
+                          ? _buildEditField(
+                            Icons.badge,
+                            "Prénom",
+                            _lastNameController,
+                          )
+                          : _buildProfileItem(Icons.badge, "Prénom", _lastName),
                       _buildDivider(),
-                      _isEditing ? _buildEditField(Icons.email, "Email", _emailController) 
-                                 : _buildProfileItem(Icons.email, "Email", _email),
+                      _isEditing
+                          ? _buildEditField(
+                            Icons.email,
+                            "Email",
+                            _emailController,
+                          )
+                          : _buildProfileItem(Icons.email, "Email", _email),
                       _buildDivider(),
-                      _isEditing ? _buildEditField(Icons.phone, "Téléphone", _numTelController) 
-                                 : _buildProfileItem(Icons.phone, "Téléphone", _numTel),
+                      _isEditing
+                          ? _buildEditField(
+                            Icons.phone,
+                            "Téléphone",
+                            _numTelController,
+                          )
+                          : _buildProfileItem(
+                            Icons.phone,
+                            "Téléphone",
+                            _numTel,
+                          ),
                       SizedBox(height: 20),
                       _isEditing
                           ? Row(
-                              children: [
-                                Expanded(
-                                  child: _buildActionButton(
-                                    icon: Icons.cancel,
-                                    label: "Annuler",
-                                    color: Colors.grey,
-                                    onPressed: _toggleEditMode,
-                                  ),
+                            children: [
+                              Expanded(
+                                child: _buildActionButton(
+                                  icon: Icons.cancel,
+                                  label: "Annuler",
+                                  color: Colors.grey,
+                                  onPressed: _toggleEditMode,
                                 ),
-                                SizedBox(width: 10),
-                                Expanded(
-                                  child: _buildActionButton(
-                                    icon: Icons.save,
-                                    label: "Enregistrer",
-                                    color: Colors.green,
-                                    onPressed: _saveUserData,
-                                  ),
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: _buildActionButton(
+                                  icon: Icons.save,
+                                  label: "Enregistrer",
+                                  color: Colors.green,
+                                  onPressed: _saveUserData,
                                 ),
-                              ],
-                            )
+                              ),
+                            ],
+                          )
                           : _buildActionButton(
-                              icon: Icons.edit,
-                              label: "Modifier profil",
-                              color: Color(0xFF5B67CA),
-                              onPressed: _toggleEditMode,
-                            ),
+                            icon: Icons.edit,
+                            label: "Modifier profil",
+                            color: Color(0xFF5B67CA),
+                            onPressed: _toggleEditMode,
+                          ),
                       SizedBox(height: 15),
                       if (!_isEditing)
                         _buildActionButton(
@@ -440,7 +491,11 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
     );
   }
 
-  Widget _buildEditField(IconData icon, String label, TextEditingController controller) {
+  Widget _buildEditField(
+    IconData icon,
+    String label,
+    TextEditingController controller,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -471,7 +526,10 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
                 TextField(
                   controller: controller,
                   decoration: InputDecoration(
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
                     isDense: true,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -479,13 +537,13 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Color(0xFFEF5829), width: 1.5),
+                      borderSide: BorderSide(
+                        color: AppTheme.primaryOrange,
+                        width: 1.5,
+                      ),
                     ),
                   ),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -496,10 +554,7 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
   }
 
   Widget _buildDivider() {
-    return Divider(
-      color: Colors.grey.withOpacity(0.2),
-      thickness: 1.0,
-    );
+    return Divider(color: Colors.grey.withOpacity(0.2), thickness: 1.0);
   }
 
   Widget _buildActionButton({
@@ -514,9 +569,7 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
         backgroundColor: color,
         foregroundColor: Colors.white,
         minimumSize: Size(double.infinity, 40),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 0,
         padding: EdgeInsets.symmetric(vertical: 0),
       ),
@@ -527,10 +580,7 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
           SizedBox(width: 8),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -544,7 +594,7 @@ class _LambdaHomePage extends State<LambdaHomePage> with SingleTickerProviderSta
     _lastNameController.dispose();
     _emailController.dispose();
     _numTelController.dispose();
-    
+
     _animationController.dispose();
     super.dispose();
   }
