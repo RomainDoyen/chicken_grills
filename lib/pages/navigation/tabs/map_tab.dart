@@ -7,7 +7,9 @@ class MapTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final padding = MediaQuery.of(context).padding;
+    // viewPadding conserve l’encart physique même si un ancêtre SafeArea a
+    // retiré padding (évite que le bandeau passe sous la barre d’état).
+    final topInset = MediaQuery.viewPaddingOf(context).top;
 
     return Stack(
       children: [
@@ -16,7 +18,7 @@ class MapTab extends StatelessWidget {
           top: 0,
           left: 0,
           right: 0,
-          child: _MapHeader(topInset: padding.top),
+          child: _MapHeader(topInset: topInset),
         ),
       ],
     );

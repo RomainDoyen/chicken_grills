@@ -363,6 +363,119 @@ class _MapWidgetState extends State<MapWidget> {
     }
   }
 
+  Future<void> _launchNavigationApp(
+    BuildContext context,
+    Uri uri,
+    String appLabel,
+  ) async {
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Impossible d\'ouvrir $appLabel.')),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Impossible d\'ouvrir $appLabel.')),
+        );
+      }
+    }
+  }
+
+  void _showNavigationAppChoice(BuildContext context, MarkerModel marker) {
+    final double lat = marker.point.latitude;
+    final double lng = marker.point.longitude;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext sheetContext) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9D3C0),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Ouvrir l\'itinéraire avec',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(sheetContext),
+                          icon: const Icon(Icons.close),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.map_outlined,
+                      color: AppTheme.primaryOrange,
+                    ),
+                    title: const Text('Google Maps'),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      unawaited(
+                        _launchNavigationApp(
+                          context,
+                          Uri.parse(
+                            'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
+                          ),
+                          'Google Maps',
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.navigation_outlined,
+                      color: AppTheme.primaryOrange,
+                    ),
+                    title: const Text('Waze'),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      unawaited(
+                        _launchNavigationApp(
+                          context,
+                          Uri.parse(
+                            'https://waze.com/ul?ll=$lat,$lng&navigate=yes',
+                          ),
+                          'Waze',
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _showMarkerDetails(MarkerModel marker) {
     // Obtenir l'ID de l'utilisateur actuel
     final currentUser = auth.FirebaseAuth.instance.currentUser;
@@ -509,24 +622,8 @@ class _MapWidgetState extends State<MapWidget> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              onPressed: () async {
-                                final Uri url = Uri.parse(
-                                  'https://www.google.com/maps/dir/?api=1&destination=${marker.point.latitude},${marker.point.longitude}',
-                                );
-                                final bool launched = await launchUrl(
-                                  url,
-                                  mode: LaunchMode.externalApplication,
-                                );
-                                if (!launched && context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Impossible d\'ouvrir l\'itinéraire dans Google Maps.',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
+                              onPressed: () =>
+                                  _showNavigationAppChoice(context, marker),
                             ),
                           ),
                           if (isOwner) ...[
@@ -618,20 +715,14 @@ class _MapWidgetState extends State<MapWidget> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              userData['email'] ?? '',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                              ),
-                            ),
+                            _buildTappableEmail(context, userData['email']?.toString()),
                           ],
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _infoRow(Icons.phone, userData['numTel'] ?? 'Non renseigné'),
+                  _buildPhoneContactRow(context, userData['numTel']),
                   const SizedBox(height: 8),
                   _infoRow(Icons.business, 'SIRET: ${userData['numSiret']}'),
                   if (userData['description'] != null &&
@@ -828,20 +919,14 @@ class _MapWidgetState extends State<MapWidget> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              userData['email'] ?? '',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                              ),
-                            ),
+                            _buildTappableEmail(context, userData['email']?.toString()),
                           ],
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _infoRow(Icons.phone, userData['numTel'] ?? 'Non renseigné'),
+                  _buildPhoneContactRow(context, userData['numTel']),
                   if (userData['description'] != null &&
                       userData['description'].toString().isNotEmpty) ...[
                     const SizedBox(height: 16),
@@ -871,6 +956,98 @@ class _MapWidgetState extends State<MapWidget> {
         Icon(icon, size: 16, color: Colors.grey[600]),
         const SizedBox(width: 8),
         Expanded(child: Text(text, style: TextStyle(color: Colors.grey[800]))),
+      ],
+    );
+  }
+
+  static final RegExp _digit = RegExp(r'\d');
+
+  Uri? _mailtoUri(String? email) {
+    final e = (email ?? '').toString().trim();
+    if (e.isEmpty || !e.contains('@')) return null;
+    return Uri(scheme: 'mailto', path: e);
+  }
+
+  Uri? _telUri(String? raw) {
+    final s = (raw ?? '').toString().trim();
+    if (s.isEmpty) return null;
+    final lower = s.toLowerCase();
+    if (lower == 'non renseigné' || lower == 'non renseigne') return null;
+    final buf = StringBuffer();
+    for (final c in s.runes) {
+      final ch = String.fromCharCode(c);
+      if (ch == '+' && buf.isEmpty) {
+        buf.write(ch);
+      } else if (_digit.hasMatch(ch)) {
+        buf.write(ch);
+      }
+    }
+    final n = buf.toString();
+    if (n.replaceAll('+', '').isEmpty) return null;
+    // parse évite d’encoder le « + » international (contrairement à Uri(scheme:tel, path:)).
+    return Uri.parse('tel:$n');
+  }
+
+  Future<void> _launchContactUri(BuildContext context, Uri? uri) async {
+    if (uri == null) return;
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Impossible d\'ouvrir le lien.')),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Impossible d\'ouvrir le lien.')),
+        );
+      }
+    }
+  }
+
+  static const TextStyle _linkTextStyle = TextStyle(
+    color: AppTheme.primaryOrange,
+    fontSize: 14,
+    decoration: TextDecoration.underline,
+    decorationColor: AppTheme.primaryOrange,
+    fontWeight: FontWeight.w500,
+  );
+
+  Widget _buildTappableEmail(BuildContext context, String? email) {
+    final text = (email ?? '').toString();
+    final uri = _mailtoUri(text);
+    if (uri == null) {
+      return Text(
+        text,
+        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+      );
+    }
+    return InkWell(
+      onTap: () => _launchContactUri(context, uri),
+      child: Text(text, style: _linkTextStyle),
+    );
+  }
+
+  Widget _buildPhoneContactRow(BuildContext context, dynamic numTel) {
+    final display = (numTel ?? 'Non renseigné').toString();
+    final uri = _telUri(display);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.phone, size: 16, color: Colors.grey[600]),
+        const SizedBox(width: 8),
+        Expanded(
+          child: uri == null
+              ? Text(display, style: TextStyle(color: Colors.grey[800]))
+              : InkWell(
+                  onTap: () => _launchContactUri(context, uri),
+                  child: Text(display, style: _linkTextStyle),
+                ),
+        ),
       ],
     );
   }

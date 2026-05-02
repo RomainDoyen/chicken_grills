@@ -61,6 +61,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
+      // Encart bas uniquement (barre de navigation gestuelle iOS / Android).
+      builder: (context, child) {
+        if (child == null) {
+          return const SizedBox.shrink();
+        }
+        return SafeArea(
+          top: false,
+          left: false,
+          right: false,
+          bottom: true,
+          child: child,
+        );
+      },
       initialRoute: '/',
       routes: {
         '/': (context) => const MySplashScreen(), // SplashScreen
